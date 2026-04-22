@@ -1,123 +1,234 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Navbar({ setOpen, setAuth }) {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef();
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
+
   const handleLogout = () => {
+    if (!window.confirm("Logout from your account?")) return;
     localStorage.removeItem("dairy_auth");
     setAuth(false);
   };
 
   return (
-    <div style={styles.nav} className="glass">
+    <div style={styles.nav}>
 
+      {/* LEFT */}
       <div style={styles.left}>
         <button onClick={() => setOpen(prev => !prev)} style={styles.menuBtn}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="3" y1="12" x2="21" y2="12"></line>
-            <line x1="3" y1="6" x2="21" y2="6"></line>
-            <line x1="3" y1="18" x2="21" y2="18"></line>
-          </svg>
+          ☰
         </button>
+
         <div style={styles.searchBox}>
-          <span style={{ color: "var(--text-muted)", marginLeft: "10px" }}>🔍</span>
-          <input type="text" placeholder="Search..." style={styles.searchInput} />
+          <span style={styles.searchIcon}>🔍</span>
+          <input placeholder="Search..." style={styles.searchInput} />
         </div>
       </div>
 
+      {/* RIGHT */}
       <div style={styles.right}>
-        <button style={styles.iconBtn} onClick={toggleTheme} title="Toggle Theme">
+        <button style={styles.iconBtn} onClick={toggleTheme}>
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
-        <button style={styles.iconBtn} onClick={handleLogout} title="Logout">🚪</button>
-        <div style={styles.userProfile}>
-          <div style={styles.avatar}>A</div>
-          <div style={styles.userInfo}>
-            <span style={styles.userName}>Admin</span>
-            <span style={styles.userRole}>Store Manager</span>
+
+        {/* PROFILE */}
+        <div style={styles.profileWrapper} ref={dropdownRef}>
+          <div
+            style={styles.userProfile}
+            onClick={() => setShowDropdown(prev => !prev)}
+          >
+            <div style={styles.avatar}>SM</div>
+          </div>
+
+          {/* DROPDOWN */}
+          <div style={{
+            ...styles.dropdown,
+            opacity: showDropdown ? 1 : 0,
+            transform: showDropdown ? "translateY(0)" : "translateY(-10px)",
+            pointerEvents: showDropdown ? "auto" : "none"
+          }}>
+            <div style={styles.dropdownHeader}>
+              <div style={styles.avatarLarge}>SM</div>
+              <div>
+                <div style={styles.name}>Store Manager</div>
+                <div style={styles.subText}>Active</div>
+              </div>
+            </div>
+
+            <div style={styles.divider}></div>
+
+            <div
+              style={styles.logoutItem}
+              onClick={handleLogout}
+              onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              🚪 Logout
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
 const styles = {
   nav: {
-    padding: "12px 16px", // reduced for mobile
+    padding: "12px 18px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
     borderBottom: "1px solid var(--border-color)",
     background: "var(--bg-card)",
-    flexWrap: "wrap", // ✅ important
-    gap: "10px"
   },
+
   left: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    flex: 1
   },
+
   menuBtn: {
+    fontSize: "20px",
     background: "none",
     border: "none",
-    color: "var(--text-main)",
-    padding: "6px",
+    cursor: "pointer"
   },
+
   searchBox: {
     display: "flex",
     alignItems: "center",
     background: "var(--bg-color)",
     borderRadius: "20px",
-    padding: "4px",
-    width: "100%", // ✅ responsive
-    maxWidth: "200px", // limit size
+    padding: "6px 10px",
     border: "1px solid var(--border-color)"
   },
+
+  searchIcon: {
+    marginRight: "6px",
+    opacity: 0.6
+  },
+
   searchInput: {
     border: "none",
-    background: "transparent",
-    width: "100%",
-    padding: "6px",
-    fontSize: "14px"
+    outline: "none",
+    background: "transparent"
   },
+
   right: {
     display: "flex",
     alignItems: "center",
     gap: "10px"
   },
+
   iconBtn: {
     width: "36px",
     height: "36px",
-    fontSize: "16px",
+    borderRadius: "50%",
+    border: "none",
+    cursor: "pointer",
+    background: "var(--bg-color)"
   },
+
+  profileWrapper: {
+    position: "relative"
+  },
+
   userProfile: {
+    cursor: "pointer"
+  },
+
+  avatar: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+    color: "#fff",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    justifyContent: "center",
+    fontWeight: "600"
   },
-  avatar: {
-    width: "32px",
-    height: "32px",
+
+  dropdown: {
+    position: "absolute",
+    top: "48px",
+    right: 0,
+    width: "220px",
+    background: "var(--bg-card)",
+    borderRadius: "12px",
+    boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
+    transition: "all 0.2s ease",
+    overflow: "hidden",
+    zIndex: 999
+  },
+
+  dropdownHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "12px"
+  },
+
+  avatarLarge: {
+    width: "42px",
+    height: "42px",
+    borderRadius: "50%",
+    background: "#6366f1",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "600"
+  },
+
+  name: {
+    fontSize: "14px",
+    fontWeight: "600"
+  },
+
+  subText: {
+    fontSize: "12px",
+    opacity: 0.6
+  },
+
+  divider: {
+    height: "1px",
+    background: "var(--border-color)",
+    margin: "6px 0"
+  },
+
+  dropdownItem: {
+    padding: "10px 14px",
+    cursor: "pointer",
     fontSize: "14px"
   },
-  userInfo: {
-    display: window.innerWidth < 768 ? "none" : "flex", // ✅ hide on mobile
-    flexDirection: "column"
+
+  logoutItem: {
+    padding: "10px 14px",
+    cursor: "pointer",
+    fontSize: "14px",
+    color: "#ef4444",
+    fontWeight: "500"
   }
 };
