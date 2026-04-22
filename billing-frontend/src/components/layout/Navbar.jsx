@@ -33,24 +33,25 @@ export default function Navbar({ setOpen, setAuth }) {
   return (
     <div style={styles.nav}>
 
-      {/* LEFT */}
-      <div style={styles.left}>
-        <button onClick={() => setOpen(prev => !prev)} style={styles.menuBtn}>
-          ☰
-        </button>
+      {/* MENU */}
+      <button onClick={() => setOpen(prev => !prev)} style={styles.menuBtn}>
+        ☰
+      </button>
 
-        <div style={styles.searchBox}>
-          <span style={styles.searchIcon}>🔍</span>
-          <input placeholder="Search..." style={styles.searchInput} />
-        </div>
+      {/* SEARCH */}
+      <div style={styles.searchBox}>
+        <span style={styles.searchIcon}>🔍</span>
+        <input placeholder="Search..." style={styles.searchInput} />
       </div>
 
-      {/* RIGHT */}
+      {/* RIGHT SIDE */}
       <div style={styles.right}>
+        {/* THEME */}
         <button style={styles.iconBtn} onClick={toggleTheme}>
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
 
+        {/* PROFILE */}
         <div style={styles.profileWrapper} ref={dropdownRef}>
           <div
             style={styles.userProfile}
@@ -59,12 +60,15 @@ export default function Navbar({ setOpen, setAuth }) {
             <div style={styles.avatar}>SM</div>
           </div>
 
-          <div style={{
-            ...styles.dropdown,
-            opacity: showDropdown ? 1 : 0,
-            transform: showDropdown ? "translateY(0)" : "translateY(-10px)",
-            pointerEvents: showDropdown ? "auto" : "none"
-          }}>
+          {/* DROPDOWN */}
+          <div
+            style={{
+              ...styles.dropdown,
+              opacity: showDropdown ? 1 : 0,
+              transform: showDropdown ? "translateY(0)" : "translateY(-10px)",
+              pointerEvents: showDropdown ? "auto" : "none"
+            }}
+          >
             <div style={styles.dropdownHeader}>
               <div style={styles.avatarLarge}>SM</div>
               <div>
@@ -89,19 +93,10 @@ const styles = {
   nav: {
     padding: "10px 12px",
     display: "flex",
-    flexWrap: "wrap",              // ✅ key for mobile
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: "1px solid var(--border-color)",
-    background: "var(--bg-card)",
-    gap: "10px"
-  },
-
-  left: {
-    display: "flex",
     alignItems: "center",
     gap: "10px",
-    flex: "1 1 100%"               // ✅ takes full width on mobile
+    borderBottom: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
   },
 
   menuBtn: {
@@ -118,7 +113,8 @@ const styles = {
     borderRadius: "20px",
     padding: "6px 10px",
     border: "1px solid var(--border-color)",
-    flex: 1                        // ✅ fills space
+    flex: 1,
+    minWidth: 0
   },
 
   searchIcon: {
@@ -130,14 +126,15 @@ const styles = {
     border: "none",
     outline: "none",
     background: "transparent",
-    width: "100%"
+    width: "100%",
+    fontSize: "14px",
+    color: "var(--text-main)"
   },
 
   right: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    marginLeft: "auto"
+    gap: "8px"
   },
 
   iconBtn: {
@@ -174,8 +171,7 @@ const styles = {
     position: "absolute",
     top: "44px",
     right: 0,
-    width: "90vw",                 // ✅ mobile friendly
-    maxWidth: "220px",
+    width: "200px",
     background: "var(--bg-card)",
     borderRadius: "12px",
     boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
@@ -225,6 +221,6 @@ const styles = {
     fontSize: "14px",
     color: "#ef4444",
     fontWeight: "500",
-    textAlign: "center"           // ✅ better touch UI
+    textAlign: "center"
   }
 };
