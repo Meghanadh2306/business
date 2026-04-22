@@ -3,11 +3,13 @@ import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
 import { useNavigate } from "react-router-dom";
+import Select from "react-select";
+import { useMemo } from "react";
 
 export default function CreateBill() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
-  const [items, setItems] = useState([{ productId: "", name: "", quantity: 1, price: 0 }]);
+  const [items, setItems] = useState([{ productId: "", name: "", quantity: "", price: "" }]);
   const [customerId, setCustomerId] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ export default function CreateBill() {
   };
 
   const addItem = () => {
-    setItems([...items, { productId: "", name: "", quantity: 1, price: 0 }]);
+    setItems([...items, { productId: "", name: "", quantity: "", price: "" }]);
   };
 
   const removeItem = (index) => {
@@ -44,6 +46,31 @@ export default function CreateBill() {
     const newItems = [...items];
 
     if (field === "productId") {
+      // 🚨 check duplicate
+      const alreadyExists = newItems.some(
+        (item, index) => item.productId === value && index !== i
+      );
+
+      if (alreadyExists) {
+        const existingIndex = newItems.findIndex(
+          (item, index) => item.productId === value && index !== i
+        );
+
+        newItems[existingIndex].quantity =
+          Math.max(1, Number(newItems[existingIndex].quantity || 0) + 1);
+
+        // 🔥 OPTIONAL: set price if empty
+        if (!newItems[existingIndex].price) {
+          const product = products.find(p => p._id === value);
+          newItems[existingIndex].price = product?.price || "";
+        }
+
+        setItems(newItems.filter((_, index) => index !== i));
+
+        toast.success("Quantity updated instead of duplicate");
+        return;
+      }
+
       const product = products.find(p => p._id === value);
 
       newItems[i] = {
@@ -64,7 +91,20 @@ export default function CreateBill() {
 
   const submitBill = async () => {
     if (!customerId) return toast.error("Please select a customer");
-    const validItems = items.filter(i => i.productId && i.quantity > 0);
+    if (items.some(i => i.quantity === "")) {
+      return toast.error("Please enter quantity for all items");
+    }
+    if (items.some(i => i.price === "")) {
+      return toast.error("Please enter price for all items");
+    }
+    const validItems = items.filter(
+      i =>
+        i.productId &&
+        i.quantity !== "" &&
+        i.quantity > 0 &&
+        i.price !== "" &&
+        i.price > 0
+    );
     if (validItems.length === 0) return toast.error("Please add at least one valid item");
 
     setLoading(true);
@@ -88,7 +128,14 @@ export default function CreateBill() {
 
   const handleDownloadDraft = () => {
     if (!customerId) return toast.error("Please select a customer first");
-    const validItems = items.filter(i => i.productId && i.quantity > 0);
+    const validItems = items.filter(
+      i =>
+        i.productId &&
+        i.quantity !== "" &&
+        i.quantity > 0 &&
+        i.price !== "" &&
+        i.price > 0
+    );
     if (validItems.length === 0) return toast.error("Please add at least one valid item");
 
     const customer = customers.find(c => c._id === customerId);
@@ -313,6 +360,15 @@ export default function CreateBill() {
       toast.error("Failed to generate PDF", { id: "pdf-toast" });
     });
   };
+  const productOptions = useMemo(() =>
+    products.map(p => ({
+      value: p._id,
+      label: items.some(item => item.productId === p._id)
+        ? `${p.name} (Added)`
+        : p.name,
+      isDisabled: items.some(item => item.productId === p._id)
+    })),
+    [products, items]);
 
   return (
     <div>
@@ -367,34 +423,51 @@ export default function CreateBill() {
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr key={i}>
+                  <tr key={i} style={{ background: item.productId ? "#F9FAFB" : "white" }}>
                     <td>
-                      <select
-                        value={item.productId}
-                        onChange={(e) => updateItem(i, "productId", e.target.value)}
-                        style={{ width: '100%' }}
-                      >
-                        <option value="">-- Select --</option>
-                        {products.map(p => (
-                          <option key={p._id} value={p._id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={item.price}
-                        onChange={(e) => updateItem(i, "price", Number(e.target.value))}
-                        style={{ width: '100%' }}
+                      <Select
+                        options={productOptions}
+                        value={productOptions.find(opt => opt.value === item.productId) || null}
+                        onChange={(selected) =>
+                          updateItem(i, "productId", selected ? selected.value : "")
+                        }
+                        placeholder="Search product..."
+                        menuPortalTarget={document.body}
+                        menuPosition="fixed"
+                        isClearable
+                        styles={{
+                          menuPortal: base => ({ ...base, zIndex: 9999 })
+                        }}
                       />
                     </td>
                     <td>
                       <input
                         type="number"
-                        min="1"
+                        placeholder="Enter price"
+                        value={item.price}
+                        required
+                        min="0"
+                        onChange={(e) =>
+                          updateItem(i, "price", e.target.value === "" ? "" : Number(e.target.value))
+                        }
+                        style={{ width: "100%" }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="Enter qty"
                         value={item.quantity}
-                        onChange={(e) => updateItem(i, "quantity", Number(e.target.value))}
-                        style={{ width: '100%' }}
+                        required
+                        min="1"
+                        onChange={(e) =>
+                          updateItem(
+                            i,
+                            "quantity",
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                        style={{ width: "100%" }}
                       />
                     </td>
                     <td style={{ fontWeight: 600 }}>
@@ -418,34 +491,51 @@ export default function CreateBill() {
         <div className="mobile-cards">
           {items.map((item, i) => (
             <div key={i} className="mobile-card">
-              <select
-                value={item.productId}
-                onChange={(e) => updateItem(i, "productId", e.target.value)}
-              >
-                <option value="">Select product</option>
-                {products.map(p => (
-                  <option key={p._id} value={p._id}>{p.name}</option>
-                ))}
-              </select>
+              <Select
+                options={productOptions}
+                value={productOptions.find(opt => opt.value === item.productId) || null}
+                onChange={(selected) =>
+                  updateItem(i, "productId", selected ? selected.value : "")
+                }
+                placeholder="Search product..."
+                menuPortalTarget={document.body}
+                menuPosition="fixed"
+                isClearable
+                styles={{
+                  menuPortal: base => ({ ...base, zIndex: 9999 })
+                }}
+              />
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <input
                   type="number"
-                  placeholder="Price"
+                  placeholder="Enter price"
                   value={item.price}
-                  onChange={(e) => updateItem(i, "price", Number(e.target.value))}
+                  required
+                  min="0"
+                  onChange={(e) =>
+                    updateItem(i, "price", e.target.value === "" ? "" : Number(e.target.value))
+                  }
                 />
 
                 <input
                   type="number"
-                  min="1"
+                  placeholder="Enter qty"
                   value={item.quantity}
-                  onChange={(e) => updateItem(i, "quantity", Number(e.target.value))}
+                  required
+                  min="1"
+                  onChange={(e) =>
+                    updateItem(
+                      i,
+                      "quantity",
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
                 />
               </div>
 
               <p style={{ fontWeight: "bold" }}>
-                ₹{(item.quantity * item.price).toLocaleString()}
+                ₹{((item.quantity || 0) * (item.price || 0)).toLocaleString()}
               </p>
 
               <button
