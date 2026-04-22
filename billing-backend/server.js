@@ -30,12 +30,15 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reports", reportRoutes);
 
-// ✅ Serve frontend (IMPORTANT)
-app.use(express.static(path.join(__dirname, "client/dist")));
+// 🔥 IMPORTANT: Detect correct frontend folder
+const frontendPath = path.join(__dirname, "dist"); // ✅ CHANGE HERE
 
-// ✅ FIXED CATCH-ALL ROUTE (NO MORE "*")
+// Serve frontend
+app.use(express.static(frontendPath));
+
+// Catch-all (for React Router)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "client/dist/index.html"));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 // Server
@@ -43,4 +46,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("Serving frontend from:", frontendPath);
 });
