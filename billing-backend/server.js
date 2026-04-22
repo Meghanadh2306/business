@@ -16,11 +16,11 @@ connectDB();
 
 const app = express();
 
-// Fix __dirname for ES modules
+// Fix __dirname (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Middlewares
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -30,12 +30,11 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reports", reportRoutes);
 
-// ✅ SERVE FRONTEND (VERY IMPORTANT)
+// ✅ Serve frontend (IMPORTANT)
 app.use(express.static(path.join(__dirname, "client/dist")));
-// (change to "build" if using CRA)
 
-// ✅ CATCH ALL ROUTE (THIS FIXES 404)
-app.get("*", (req, res) => {
+// ✅ FIXED CATCH-ALL ROUTE (NO MORE "*")
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "client/dist/index.html"));
 });
 
