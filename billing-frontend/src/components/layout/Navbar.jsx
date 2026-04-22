@@ -51,7 +51,6 @@ export default function Navbar({ setOpen, setAuth }) {
           {theme === 'light' ? '🌙' : '☀️'}
         </button>
 
-        {/* PROFILE */}
         <div style={styles.profileWrapper} ref={dropdownRef}>
           <div
             style={styles.userProfile}
@@ -60,7 +59,6 @@ export default function Navbar({ setOpen, setAuth }) {
             <div style={styles.avatar}>SM</div>
           </div>
 
-          {/* DROPDOWN */}
           <div style={{
             ...styles.dropdown,
             opacity: showDropdown ? 1 : 0,
@@ -77,12 +75,7 @@ export default function Navbar({ setOpen, setAuth }) {
 
             <div style={styles.divider}></div>
 
-            <div
-              style={styles.logoutItem}
-              onClick={handleLogout}
-              onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-            >
+            <div style={styles.logoutItem} onClick={handleLogout}>
               🚪 Logout
             </div>
           </div>
@@ -94,18 +87,21 @@ export default function Navbar({ setOpen, setAuth }) {
 
 const styles = {
   nav: {
-    padding: "12px 18px",
+    padding: "10px 12px",
     display: "flex",
+    flexWrap: "wrap",              // ✅ key for mobile
     justifyContent: "space-between",
     alignItems: "center",
     borderBottom: "1px solid var(--border-color)",
     background: "var(--bg-card)",
+    gap: "10px"
   },
 
   left: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
+    flex: "1 1 100%"               // ✅ takes full width on mobile
   },
 
   menuBtn: {
@@ -121,7 +117,8 @@ const styles = {
     background: "var(--bg-color)",
     borderRadius: "20px",
     padding: "6px 10px",
-    border: "1px solid var(--border-color)"
+    border: "1px solid var(--border-color)",
+    flex: 1                        // ✅ fills space
   },
 
   searchIcon: {
@@ -132,18 +129,20 @@ const styles = {
   searchInput: {
     border: "none",
     outline: "none",
-    background: "transparent"
+    background: "transparent",
+    width: "100%"
   },
 
   right: {
     display: "flex",
     alignItems: "center",
-    gap: "10px"
+    gap: "8px",
+    marginLeft: "auto"
   },
 
   iconBtn: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     border: "none",
     cursor: "pointer",
@@ -159,22 +158,24 @@ const styles = {
   },
 
   avatar: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
     color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "600"
+    fontWeight: "600",
+    fontSize: "13px"
   },
 
   dropdown: {
     position: "absolute",
-    top: "48px",
+    top: "44px",
     right: 0,
-    width: "220px",
+    width: "90vw",                 // ✅ mobile friendly
+    maxWidth: "220px",
     background: "var(--bg-card)",
     borderRadius: "12px",
     boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
@@ -191,8 +192,8 @@ const styles = {
   },
 
   avatarLarge: {
-    width: "42px",
-    height: "42px",
+    width: "40px",
+    height: "40px",
     borderRadius: "50%",
     background: "#6366f1",
     color: "#fff",
@@ -218,17 +219,12 @@ const styles = {
     margin: "6px 0"
   },
 
-  dropdownItem: {
-    padding: "10px 14px",
-    cursor: "pointer",
-    fontSize: "14px"
-  },
-
   logoutItem: {
-    padding: "10px 14px",
+    padding: "12px",
     cursor: "pointer",
     fontSize: "14px",
     color: "#ef4444",
-    fontWeight: "500"
+    fontWeight: "500",
+    textAlign: "center"           // ✅ better touch UI
   }
 };
