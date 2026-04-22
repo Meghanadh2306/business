@@ -42,11 +42,17 @@ export default function CreateBill() {
 
   const updateItem = (i, field, value) => {
     const newItems = [...items];
-    newItems[i][field] = value;
 
     if (field === "productId") {
       const product = products.find(p => p._id === value);
-      newItems[i].name = product?.name || "";
+
+      newItems[i] = {
+        ...newItems[i],
+        productId: value,
+        name: product?.name || ""
+      };
+    } else {
+      newItems[i][field] = value;
     }
 
     setItems(newItems);
@@ -347,67 +353,124 @@ export default function CreateBill() {
           <button className="btn-primary" onClick={addItem} style={{ padding: '6px 12px' }}>+ Add Item</button>
         </div>
 
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th width="150px">Price (₹)</th>
-              <th width="120px">Quantity</th>
-              <th width="150px">Total (₹)</th>
-              <th width="80px">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item, i) => (
-              <tr key={i}>
-                <td>
-                  <select
-                    value={item.productId}
-                    onChange={(e) => updateItem(i, "productId", e.target.value)}
-                    style={{ width: '100%' }}
-                  >
-                    <option value="">-- Select --</option>
-                    {products.map(p => (
-                      <option key={p._id} value={p._id}>{p.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={item.price}
-                    onChange={(e) => updateItem(i, "price", Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(i, "quantity", Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                </td>
-                <td style={{ fontWeight: 600 }}>
-                  ₹{((item.quantity || 0) * (item.price || 0)).toLocaleString()}
-                </td>
-                <td>
-                  <button
-                    onClick={() => removeItem(i)}
-                    style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '6px' }}
-                    disabled={items.length === 1}
-                  >
-                    🗑️
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="desktop-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table" style={{ minWidth: "600px" }}>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th width="150px">Price (₹)</th>
+                  <th width="120px">Quantity</th>
+                  <th width="150px">Total (₹)</th>
+                  <th width="80px">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={i}>
+                    <td>
+                      <select
+                        value={item.productId}
+                        onChange={(e) => updateItem(i, "productId", e.target.value)}
+                        style={{ width: '100%' }}
+                      >
+                        <option value="">-- Select --</option>
+                        {products.map(p => (
+                          <option key={p._id} value={p._id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        value={item.price}
+                        onChange={(e) => updateItem(i, "price", Number(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(i, "quantity", Number(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </td>
+                    <td style={{ fontWeight: 600 }}>
+                      ₹{((item.quantity || 0) * (item.price || 0)).toLocaleString()}
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => removeItem(i)}
+                        style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '6px' }}
+                        disabled={items.length === 1}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="mobile-cards">
+          {items.map((item, i) => (
+            <div key={i} className="mobile-card">
+              <select
+                value={item.productId}
+                onChange={(e) => updateItem(i, "productId", e.target.value)}
+              >
+                <option value="">Select product</option>
+                {products.map(p => (
+                  <option key={p._id} value={p._id}>{p.name}</option>
+                ))}
+              </select>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={item.price}
+                  onChange={(e) => updateItem(i, "price", Number(e.target.value))}
+                />
+
+                <input
+                  type="number"
+                  min="1"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(i, "quantity", Number(e.target.value))}
+                />
+              </div>
+
+              <p style={{ fontWeight: "bold" }}>
+                ₹{(item.quantity * item.price).toLocaleString()}
+              </p>
+
+              <button
+                onClick={() => removeItem(i)}
+                style={{
+                  width: "100%",
+                  background: "#FEE2E2",
+                  color: "#EF4444",
+                  border: "none",
+                  padding: "8px",
+                  borderRadius: "6px",
+                  fontWeight: "bold"
+                }}
+              >
+                🗑 Remove Item
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="card glass flex-col-mobile justify-between" style={{ alignItems: 'flex-start' }}>
+      <div
+        className="card glass"
+        style={{ display: "flex", flexWrap: "wrap", gap: "20px", justifyContent: "space-between", alignItems: 'flex-start' }}>
+
         <div>
           <p className="text-muted" style={{ fontSize: '14px' }}>Notes</p>
           <textarea
@@ -436,6 +499,39 @@ export default function CreateBill() {
           </button>
         </div>
       </div>
+      <style>
+        {`
+.mobile-cards { display: none; }
+
+@media (max-width: 768px) {
+  .desktop-table { display: none; }
+  .mobile-cards { display: block; }
+
+  .mobile-card {
+    border: 1px solid #ddd;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: white;
+  }
+
+  .mobile-card input,
+  .mobile-card select {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .mobile-card button {
+    width: 100%;
+    background: #EF4444;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+  }
+}
+`}
+      </style>
     </div>
   );
 }
