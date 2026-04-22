@@ -1,0 +1,72 @@
+import Bill from "../models/Bill.js";
+
+export const createBill = async (req, res) => {
+  try {
+    // Find the most recent bill with an invoice number
+    const lastBill = await Bill.findOne({ invoiceNumber: { $exists: true, $ne: null } }).sort({ _id: -1 });
+    
+    let nextNum = 1;
+    if (lastBill && lastBill.invoiceNumber) {
+      const match = lastBill.invoiceNumber.match(/INV-\d{4}-(\d+)/);
+      if (match) {
+        nextNum = parseInt(match[1], 10) + 1;
+      } else {
+        const count = await Bill.countDocuments();
+        nextNum = count + 1;
+      }
+    } else {
+      const count = await Bill.countDocuments();
+      nextNum = count + 1;
+    }
+
+    let invoiceNumber;
+    let isUnique = false;
+    
+    // Loop to ensure uniqueness just in case of a race condition
+    while (!isUnique) {
+      invoiceNumber = `INV-${new Date().getFullYear()}-${String(nextNum).padStart(4, '0')}`;
+      const existing = await Bill.findOne({ invoiceNumber });
+      if (existing) {
+        nextNum++;
+      } else {
+        isUnique = true;
+      }
+    }
+
+    const newBillData = { ...req.body, invoiceNumber };
+    const bill = await Bill.create(newBillData);
+    res.status(201).json(bill);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getBills = async (req, res) => {
+  try {
+    const bills = await Bill.find().populate("customerId");
+    res.json(bills);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getBillsByCustomer = async (req, res) => {
+  try {
+    const bills = await Bill.find({ customerId: req.params.id });
+    res.json(bills);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const deleteBill = async (req, res) => {
+  try {
+    const deletedBill = await Bill.findByIdAndDelete(req.params.id);
+    if (!deletedBill) {
+      return res.status(404).json({ error: "Bill not found" });
+    }
+    res.json({ message: "Bill deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
