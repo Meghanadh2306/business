@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// Assume standard backend running on localhost:5000, tweak if needed
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://billing-backend-5lkf.onrender.com/api",
 });
 
 API.interceptors.response.use(
