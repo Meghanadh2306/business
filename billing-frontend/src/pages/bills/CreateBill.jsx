@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
+import { useNavigate } from "react-router-dom";
 
 export default function CreateBill() {
   const [customers, setCustomers] = useState([]);
@@ -9,6 +10,7 @@ export default function CreateBill() {
   const [items, setItems] = useState([{ productId: "", name: "", quantity: 1, price: 0 }]);
   const [customerId, setCustomerId] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
@@ -70,7 +72,7 @@ export default function CreateBill() {
         totalAmount: total
       });
       toast.success("Bill Created Successfully!");
-      setTimeout(() => window.location.href = '/bills', 1000);
+      setTimeout(() => navigate("/bills"), 1000);
     } catch (err) {
       console.error(err);
       toast.error("Failed to create bill");
@@ -84,7 +86,7 @@ export default function CreateBill() {
     if (validItems.length === 0) return toast.error("Please add at least one valid item");
 
     const customer = customers.find(c => c._id === customerId);
-    
+
     const element = document.createElement('div');
     element.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #000; background: #fff; width: 100%; box-sizing: border-box;">
@@ -326,7 +328,7 @@ export default function CreateBill() {
         <h3 className="mb-4" style={{ fontSize: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Customer Details</h3>
         <div>
           <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 500 }}>Select Customer</label>
-          <select 
+          <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
             style={{ width: '100%', maxWidth: '400px' }}
@@ -359,7 +361,7 @@ export default function CreateBill() {
             {items.map((item, i) => (
               <tr key={i}>
                 <td>
-                  <select 
+                  <select
                     value={item.productId}
                     onChange={(e) => updateItem(i, "productId", e.target.value)}
                     style={{ width: '100%' }}
@@ -391,7 +393,7 @@ export default function CreateBill() {
                   ₹{((item.quantity || 0) * (item.price || 0)).toLocaleString()}
                 </td>
                 <td>
-                  <button 
+                  <button
                     onClick={() => removeItem(i)}
                     style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '6px' }}
                     disabled={items.length === 1}
@@ -408,12 +410,12 @@ export default function CreateBill() {
       <div className="card glass flex-col-mobile justify-between" style={{ alignItems: 'flex-start' }}>
         <div>
           <p className="text-muted" style={{ fontSize: '14px' }}>Notes</p>
-          <textarea 
-            placeholder="Add any notes here..." 
+          <textarea
+            placeholder="Add any notes here..."
             style={{ width: '300px', height: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '8px', resize: 'none', fontFamily: 'inherit' }}
           />
         </div>
-        
+
         <div style={{ width: '300px' }}>
           <div className="flex justify-between mb-2">
             <span className="text-muted">Subtotal:</span>
@@ -424,8 +426,8 @@ export default function CreateBill() {
             <span style={{ fontSize: '24px', fontWeight: 700, color: 'var(--primary)' }}>₹{total.toLocaleString()}</span>
           </div>
 
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             style={{ width: '100%', marginTop: '20px', padding: '12px', fontSize: '16px' }}
             onClick={submitBill}
             disabled={loading}
