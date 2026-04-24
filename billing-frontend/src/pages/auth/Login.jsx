@@ -1,21 +1,28 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAuth } from "../../context/AuthContext"; // ✅ use context
 
-export default function Login({ setAuth }) {
+export default function Login() {
+  const { login } = useAuth(); // ✅ use context login
+  const navigate = useNavigate();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Simple mock auth for the parlor
+
     if (username === "omkarsai" && password === "omkarsai123") {
-      localStorage.setItem("dairy_auth", "true");
-      setAuth(true);
+
+      // ✅ store session (fake token)
+      const fakeToken = "dairy-session-token";
+      login(fakeToken);
+
       toast.success("Welcome back!");
       navigate("/");
+
     } else {
       setError("Invalid credentials. Try omkarsai / omkarsai123");
       toast.error("Invalid credentials");
@@ -34,35 +41,55 @@ export default function Login({ setAuth }) {
       <div className="card glass" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
         <div style={{ fontSize: '48px', marginBottom: '10px' }}>🥛</div>
         <h2 style={{ marginBottom: '8px' }}>Omkar Sai Dairy</h2>
-        <p className="text-muted" style={{ marginBottom: '24px' }}>Sign in to manage your parlor</p>
-        
-        {error && <div style={{ color: '#ef4444', background: '#fee2e2', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
-        
+        <p className="text-muted" style={{ marginBottom: '24px' }}>
+          Sign in to manage your dairy
+        </p>
+
+        {error && (
+          <div style={{
+            color: '#ef4444',
+            background: '#fee2e2',
+            padding: '10px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
           <div style={{ textAlign: 'left' }}>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>Username</label>
-            <input 
-              type="text" 
-              placeholder="Enter username" 
+            <label style={{ fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>
+              Username
+            </label>
+            <input
+              type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              style={{ width: '100%' }}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError("");
+              }}
               required
             />
           </div>
-          
+
           <div style={{ textAlign: 'left' }}>
-            <label style={{ display: 'block', fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>Password</label>
-            <input 
-              type="password" 
-              placeholder="Enter password" 
+            <label style={{ fontSize: '13px', marginBottom: '6px', fontWeight: 600 }}>
+              Password
+            </label>
+            <input
+              type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%' }}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError("");
+              }}
               required
             />
           </div>
-          
+
           <button type="submit" className="btn-primary" style={{ marginTop: '8px', padding: '12px' }}>
             Sign In
           </button>
