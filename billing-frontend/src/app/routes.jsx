@@ -15,9 +15,7 @@ import Login from "../pages/auth/Login";
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
-  if (loading) {
-    return <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>;
-  }
+  if (loading) return null; // cleaner than loader flicker
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -26,9 +24,11 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// 🔓 Public Route (prevent login if already logged in)
+// 🔓 Public Route
 function PublicRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return null;
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -51,7 +51,7 @@ export default function AppRoutes() {
         }
       />
 
-      {/* PROTECTED ROUTES */}
+      {/* PROTECTED */}
       <Route
         element={
           <ProtectedRoute>
@@ -68,8 +68,8 @@ export default function AppRoutes() {
         <Route path="/reports" element={<Reports />} />
       </Route>
 
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* FALLBACK (SMART FIX) */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
 
     </Routes>
   );

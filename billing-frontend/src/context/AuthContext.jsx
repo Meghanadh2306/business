@@ -1,15 +1,12 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const navigate = useNavigate();
-
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // ✅ Check token on app load
+    // 🔐 Load session on app start
     useEffect(() => {
         const storedToken = sessionStorage.getItem("token");
 
@@ -25,15 +22,19 @@ export function AuthProvider({ children }) {
         sessionStorage.setItem("token", tokenData);
         setToken(tokenData);
 
-        navigate("/dashboard"); // change if needed
+        // 🔥 force refresh (more reliable than navigate)
+        window.location.href = "/";
     };
 
-    // 🚪 LOGOUT
+    // 🚪 LOGOUT (FIXED)
     const logout = () => {
-        sessionStorage.removeItem("token");
+        sessionStorage.clear(); // 🔥 clear everything
         setToken(null);
 
-        navigate("/");
+        // small delay ensures state clears
+        setTimeout(() => {
+            window.location.href = "/login";
+        }, 50);
     };
 
     // ✅ AUTH CHECK
@@ -54,7 +55,7 @@ export function AuthProvider({ children }) {
     );
 }
 
-// 🔁 Custom Hook
+// 🔁 Hook
 export function useAuth() {
     return useContext(AuthContext);
 }

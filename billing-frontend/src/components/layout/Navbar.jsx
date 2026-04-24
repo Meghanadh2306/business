@@ -1,15 +1,20 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
 
-export default function Navbar({ setOpen, setAuth }) {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+export default function Navbar({ setOpen }) {
+  const { logout } = useAuth();
+
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef();
 
+  // 🌙 THEME
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('theme', theme);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("theme", theme);
   }, [theme]);
 
+  // 🔽 CLOSE DROPDOWN ON OUTSIDE CLICK
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -21,68 +26,172 @@ export default function Navbar({ setOpen, setAuth }) {
   }, []);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
+  // 🚪 LOGOUT (IMPROVED)
   const handleLogout = () => {
-    if (!window.confirm("Logout from your account?")) return;
-    localStorage.removeItem("dairy_auth");
-    setAuth(false);
+    if (!window.confirm("Are you sure you want to logout?")) return;
+
+    setShowDropdown(false); // ✅ close dropdown
+    logout(); // ✅ context logout
   };
 
   return (
-    <div style={styles.nav}>
-
+    <div
+      style={{
+        padding: "10px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        borderBottom: "1px solid var(--border-color)",
+        background: "var(--bg-card)",
+      }}
+    >
       {/* MENU */}
-      <button onClick={() => setOpen(prev => !prev)} style={styles.menuBtn}>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        style={{
+          fontSize: "20px",
+          border: "none",
+          background: "transparent",
+          cursor: "pointer",
+        }}
+      >
         ☰
       </button>
 
       {/* SEARCH */}
-      <div style={styles.searchBox}>
-        <span style={styles.searchIcon}>🔍</span>
-        <input placeholder="Search..." style={styles.searchInput} />
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          background: "var(--bg-color)",
+          borderRadius: "20px",
+          padding: "6px 10px",
+          border: "1px solid var(--border-color)",
+        }}
+      >
+        <span style={{ marginRight: "6px", opacity: 0.6 }}>🔍</span>
+        <input
+          placeholder="Search..."
+          style={{
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            width: "100%",
+            fontSize: "14px",
+          }}
+        />
       </div>
 
-      {/* RIGHT SIDE */}
-      <div style={styles.right}>
+      {/* RIGHT */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
         {/* THEME */}
-        <button style={styles.iconBtn} onClick={toggleTheme}>
-          {theme === 'light' ? '🌙' : '☀️'}
+        <button
+          onClick={toggleTheme}
+          style={{
+            width: "34px",
+            height: "34px",
+            borderRadius: "50%",
+            border: "none",
+            cursor: "pointer",
+            background: "var(--bg-color)",
+          }}
+        >
+          {theme === "light" ? "🌙" : "☀️"}
         </button>
 
         {/* PROFILE */}
-        <div style={styles.profileWrapper} ref={dropdownRef}>
+        <div style={{ position: "relative" }} ref={dropdownRef}>
           <div
-            style={styles.userProfile}
-            onClick={() => setShowDropdown(prev => !prev)}
+            onClick={() => setShowDropdown((prev) => !prev)}
+            style={{ cursor: "pointer" }}
           >
-            <div style={styles.avatar}>SM</div>
+            <div
+              style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "600",
+                fontSize: "13px",
+              }}
+            >
+              OM
+            </div>
           </div>
 
           {/* DROPDOWN */}
-          <div
-            style={{
-              ...styles.dropdown,
-              opacity: showDropdown ? 1 : 0,
-              transform: showDropdown ? "translateY(0)" : "translateY(-10px)",
-              pointerEvents: showDropdown ? "auto" : "none"
-            }}
-          >
-            <div style={styles.dropdownHeader}>
-              <div style={styles.avatarLarge}>SM</div>
-              <div>
-                <div style={styles.name}>Store Manager</div>
-                <div style={styles.subText}>Active</div>
+          {showDropdown && (
+            <div
+              style={{
+                position: "absolute",
+                top: "44px",
+                right: 0,
+                width: "200px",
+                background: "var(--bg-card)",
+                borderRadius: "12px",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
+                zIndex: 999,
+                overflow: "hidden",
+              }}
+            >
+              <div style={{ padding: "12px", textAlign: "center" }}>
+                <div
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    background: "#6366f1",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 8px",
+                    fontWeight: "600",
+                  }}
+                >
+                  OM
+                </div>
+
+                <div style={{ fontSize: "14px", fontWeight: "600" }}>
+                  Omkar Sai
+                </div>
+                <div style={{ fontSize: "12px", opacity: 0.6 }}>
+                  Store Manager
+                </div>
+              </div>
+
+              <div
+                style={{
+                  height: "1px",
+                  background: "var(--border-color)",
+                }}
+              />
+
+              {/* LOGOUT */}
+              <div
+                onClick={handleLogout}
+                style={{
+                  padding: "12px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "#ef4444",
+                  fontWeight: "500",
+                  textAlign: "center",
+                }}
+              >
+                🚪 Logout
               </div>
             </div>
-
-            <div style={styles.divider}></div>
-
-            <div style={styles.logoutItem} onClick={handleLogout}>
-              🚪 Logout
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

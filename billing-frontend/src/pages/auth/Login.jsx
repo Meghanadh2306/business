@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,10 +14,10 @@ export default function Login() {
 
     if (username === "omkarsai" && password === "omkarsai123") {
       const fakeToken = "dairy-session-token";
-      login(fakeToken);
+
+      login(fakeToken); // ✅ handles redirect
 
       toast.success("Welcome back!");
-      navigate("/");
     } else {
       setError("Invalid credentials. Try omkarsai / omkarsai123");
       toast.error("Invalid credentials");
@@ -95,17 +93,9 @@ export default function Login() {
         >
           {/* USERNAME */}
           <div>
-            <label
-              style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                marginBottom: "5px",
-                display: "block",
-              }}
-            >
+            <label style={{ fontSize: "13px", fontWeight: "600" }}>
               Username
             </label>
-
             <input
               type="text"
               value={username}
@@ -120,7 +110,7 @@ export default function Login() {
                 borderRadius: "10px",
                 border: "1px solid #ddd",
                 fontSize: "14px",
-                outline: "none",
+                marginTop: "5px",
               }}
               required
             />
@@ -128,17 +118,9 @@ export default function Login() {
 
           {/* PASSWORD */}
           <div>
-            <label
-              style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                marginBottom: "5px",
-                display: "block",
-              }}
-            >
+            <label style={{ fontSize: "13px", fontWeight: "600" }}>
               Password
             </label>
-
             <input
               type="password"
               value={password}
@@ -153,7 +135,7 @@ export default function Login() {
                 borderRadius: "10px",
                 border: "1px solid #ddd",
                 fontSize: "14px",
-                outline: "none",
+                marginTop: "5px",
               }}
               required
             />
@@ -163,7 +145,7 @@ export default function Login() {
           <button
             type="submit"
             style={{
-              marginTop: "8px",
+              marginTop: "10px",
               padding: "12px",
               borderRadius: "10px",
               border: "none",
