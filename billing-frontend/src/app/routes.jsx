@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import Layout from "../components/layout/Layout";
 
 import Dashboard from "../pages/dashboard/Dashboard";
@@ -11,37 +11,66 @@ import Products from "../pages/products/Products";
 import Reports from "../pages/reports/Reports";
 import Login from "../pages/auth/Login";
 
-export default function AppRoutes() {
-  const [auth, setAuth] = useState(null);
+// 🔐 Protected Route
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
 
-  useEffect(() => {
-    const stored = localStorage.getItem("dairy_auth");
-    setAuth(!!stored);
-  }, []);
-
-  if (auth === null) {
+  if (loading) {
     return <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>;
   }
 
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+// 🔓 Public Route (prevent login if already logged in)
+function PublicRoute({ children }) {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
+export default function AppRoutes() {
   return (
     <Routes>
-      {!auth ? (
-        <>
-          <Route path="/login" element={<Login setAuth={setAuth} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </>
-      ) : (
-        <Route element={<Layout setAuth={setAuth} />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/create" element={<CreateBill />} />
-          <Route path="/bills" element={<BillsList />} />
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/customers/:id" element={<CustomerDetails />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      )}
+
+      {/* LOGIN */}
+      <Route
+        path="/login"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
+
+      {/* PROTECTED ROUTES */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/create" element={<CreateBill />} />
+        <Route path="/bills" element={<BillsList />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:id" element={<CustomerDetails />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/reports" element={<Reports />} />
+      </Route>
+
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   );
 }
