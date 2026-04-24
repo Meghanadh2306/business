@@ -377,12 +377,12 @@ export default function CreateBill() {
           <h2 className="text-2xl font-bold">New Dairy Bill</h2>
           <p className="text-muted">Generate a new invoice for Omkar Sai Tirumula Dairy Parlor.</p>
         </div>
-        <button className="btn-primary" onClick={handleDownloadDraft} style={{ background: '#0f172a' }}>📥 Download Draft</button>
+        <button className="btn-primary" onClick={handleDownloadDraft} style={{ background: 'var(--primary)', color: '#fff' }}>📥 Download Draft</button>
       </div>
 
       {/* Printable Header - Visible mostly in print styles if we add them, but good for UI too */}
-      <div className="card mb-4" style={{ textAlign: 'center', background: 'var(--primary)', color: 'white', borderRadius: '12px 12px 0 0' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', letterSpacing: '1px', color: 'white' }}>OMKAR SAI TIRUMULA DAIRY PARLOR</h1>
+      <div className="card mb-4" style={{ textAlign: 'center', background: 'var(--primary)', color: '#fff', borderRadius: '12px 12px 0 0' }}>
+        <h1 style={{ margin: 0, fontSize: '24px', letterSpacing: '1px', color: '#fff' }}>OMKAR SAI TIRUMULA DAIRY PARLOR</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.9 }}>Fresh Milk, Curd & Daily Dairy Products</p>
       </div>
 
@@ -393,7 +393,15 @@ export default function CreateBill() {
           <select
             value={customerId}
             onChange={(e) => setCustomerId(e.target.value)}
-            style={{ width: '100%', maxWidth: '400px' }}
+            style={{
+              width: '100%',
+              maxWidth: '400px',
+              background: 'var(--bg-card)',
+              color: 'var(--text-color)',
+              border: '1px solid var(--border-color)',
+              padding: '10px',
+              borderRadius: '8px'
+            }}
           >
             <option value="">-- Choose Customer --</option>
             {customers.map(c => (
@@ -423,7 +431,7 @@ export default function CreateBill() {
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr key={i} style={{ background: item.productId ? "#F9FAFB" : "white" }}>
+                  <tr key={i} style={{ background: item.productId ? "var(--bg-color)" : "var(--bg-card)" }}>
                     <td>
                       <Select
                         options={productOptions}
@@ -436,7 +444,22 @@ export default function CreateBill() {
                         menuPosition="fixed"
                         isClearable
                         styles={{
-                          menuPortal: base => ({ ...base, zIndex: 9999 })
+                          menuPortal: base => ({ ...base, zIndex: 9999 }),
+                          control: (base) => ({
+                            ...base,
+                            backgroundColor: "var(--bg-card)",
+                            borderColor: "var(--border-color)",
+                            color: "var(--text-color)"
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            backgroundColor: "var(--bg-card)",
+                            color: "var(--text-color)"
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            color: "var(--text-color)"
+                          })
                         }}
                       />
                     </td>
@@ -450,7 +473,12 @@ export default function CreateBill() {
                         onChange={(e) =>
                           updateItem(i, "price", e.target.value === "" ? "" : Number(e.target.value))
                         }
-                        style={{ width: "100%" }}
+                        style={{
+                          background: "var(--bg-card)",
+                          color: "var(--text-color)",
+                          border: "1px solid var(--border-color)",
+                          width: "100%"
+                        }}
                       />
                     </td>
                     <td>
@@ -467,7 +495,12 @@ export default function CreateBill() {
                             e.target.value === "" ? "" : Number(e.target.value)
                           )
                         }
-                        style={{ width: "100%" }}
+                        style={{
+                          background: "var(--bg-card)",
+                          color: "var(--text-color)",
+                          border: "1px solid var(--border-color)",
+                          width: "100%"
+                        }}
                       />
                     </td>
                     <td style={{ fontWeight: 600 }}>
@@ -476,7 +509,7 @@ export default function CreateBill() {
                     <td>
                       <button
                         onClick={() => removeItem(i)}
-                        style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '6px' }}
+                        style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: 'none', padding: '8px', borderRadius: '6px' }}
                         disabled={items.length === 1}
                       >
                         🗑️
@@ -502,7 +535,22 @@ export default function CreateBill() {
                 menuPosition="fixed"
                 isClearable
                 styles={{
-                  menuPortal: base => ({ ...base, zIndex: 9999 })
+                  menuPortal: base => ({ ...base, zIndex: 9999 }),
+                  control: (base) => ({
+                    ...base,
+                    backgroundColor: "var(--bg-card)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-color)"
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: "var(--bg-card)",
+                    color: "var(--text-color)"
+                  }),
+                  singleValue: (base) => ({
+                    ...base,
+                    color: "var(--text-color)"
+                  })
                 }}
               />
 
@@ -542,8 +590,8 @@ export default function CreateBill() {
                 onClick={() => removeItem(i)}
                 style={{
                   width: "100%",
-                  background: "#FEE2E2",
-                  color: "#EF4444",
+                  background: "rgba(239, 68, 68, 0.15)",
+                  color: "#ef4444",
                   border: "none",
                   padding: "8px",
                   borderRadius: "6px",
@@ -565,7 +613,10 @@ export default function CreateBill() {
           <p className="text-muted" style={{ fontSize: '14px' }}>Notes</p>
           <textarea
             placeholder="Add any notes here..."
-            style={{ width: '300px', height: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', marginTop: '8px', resize: 'none', fontFamily: 'inherit' }}
+            style={{
+              width: '300px', height: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)',
+              color: 'var(--text-color)', marginTop: '8px', resize: 'none', fontFamily: 'inherit'
+            }}
           />
         </div>
 
@@ -598,11 +649,13 @@ export default function CreateBill() {
   .mobile-cards { display: block; }
 
   .mobile-card {
-    border: 1px solid #ddd;
     padding: 12px;
     margin-bottom: 10px;
     border-radius: 8px;
-    background: white;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-color);
+
   }
 
   .mobile-card input,
@@ -613,8 +666,8 @@ export default function CreateBill() {
 
   .mobile-card button {
     width: 100%;
-    background: #EF4444;
-    color: white;
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
     border: none;
     padding: 8px;
     border-radius: 6px;
