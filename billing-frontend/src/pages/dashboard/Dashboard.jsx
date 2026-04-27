@@ -151,7 +151,7 @@ export default function Dashboard() {
     <div>
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <h2 className="text-xl md:text-2xl font-bold">Dashboard</h2>
         <button className="btn-primary" onClick={() => navigate("/create")}>
           + New Bill

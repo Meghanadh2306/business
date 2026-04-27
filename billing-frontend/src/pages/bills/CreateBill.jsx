@@ -379,7 +379,7 @@ export default function CreateBill() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 className="text-2xl font-bold">New Dairy Bill</h2>
           <p className="text-muted">Generate a new invoice for {parlorTitle1} {parlorTitle2}.</p>
@@ -419,7 +419,7 @@ export default function CreateBill() {
       </div>
 
       <div className="card glass mb-4">
-        <div className="flex justify-between items-center mb-4" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+        <div className="flex justify-between items-center mb-4" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
           <h3 style={{ fontSize: '18px' }}>Products</h3>
           <button className="btn-primary" onClick={addItem} style={{ padding: '6px 12px' }}>+ Add Item</button>
         </div>
@@ -621,13 +621,13 @@ export default function CreateBill() {
           <textarea
             placeholder="Add any notes here..."
             style={{
-              width: '300px', height: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)',
+              width: '100%', maxWidth: '300px', height: '80px', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-card)',
               color: 'var(--text-color)', marginTop: '8px', resize: 'none', fontFamily: 'inherit'
             }}
           />
         </div>
 
-        <div style={{ width: '300px' }}>
+        <div style={{ width: '100%', maxWidth: '300px' }}>
           <div className="flex justify-between mb-2">
             <span className="text-muted">Subtotal:</span>
             <span style={{ fontWeight: 600 }}>₹{subtotal.toLocaleString()}</span>

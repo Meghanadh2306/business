@@ -111,12 +111,12 @@ export default function BillsList() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 className="text-2xl font-bold">All Invoices by Customer</h2>
           <p className="text-muted">Manage and view bills grouped under each user profile.</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <select
             value={filterMonth}
             onChange={e => setFilterMonth(e.target.value)}

@@ -40,7 +40,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "40px auto" }}>
+    <div style={{ width: "100%", maxWidth: "400px", margin: "40px auto", padding: "0 16px", boxSizing: "border-box" }}>
       <div className="card glass">
         <h2 className="text-2xl font-bold mb-2">Change Password</h2>
         <p className="text-muted mb-6">Update the password for your account ({username}).</p>

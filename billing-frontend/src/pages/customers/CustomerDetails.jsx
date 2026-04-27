@@ -293,12 +293,12 @@ export default function CustomerDetails() {
         ← Back to Customers
       </button>
 
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 className="text-2xl font-bold">{customer ? customer.name : 'Customer Details'}</h2>
           <p className="text-muted">History and billing records</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <label style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>Search by Date:</label>
           <input 
             type="date" 

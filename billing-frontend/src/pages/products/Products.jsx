@@ -51,7 +51,7 @@ export default function Products() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 className="text-2xl font-bold">Dairy Products & Inventory</h2>
           <p className="text-muted">Manage your milk products and daily pricing</p>

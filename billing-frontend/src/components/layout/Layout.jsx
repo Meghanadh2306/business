@@ -44,7 +44,12 @@ export default function Layout({ setAuth }) {
       >
         <Navbar setOpen={setOpen} setAuth={setAuth} />
 
-        <div style={styles.content}>
+        <div
+          style={{
+            ...styles.content,
+            padding: window.innerWidth <= 768 ? "16px" : "32px",
+          }}
+        >
           <div style={styles.contentInner}>
             <Outlet />
           </div>
