@@ -96,16 +96,20 @@ export default function BillsList() {
     return true;
   });
 
-  // Group bills by customer object
+  // Group bills by customer name/phone to merge branches visually
   const groupedBills = filteredBills.reduce((groups, bill) => {
     const customer = bill.customerId || { _id: 'unknown', name: 'Walk-in / Unknown', phone: '', address: '' };
-    if (!groups[customer._id]) {
-      groups[customer._id] = {
-        customer: customer,
+    
+    // Create a unique key based on phone (primary) or name (fallback)
+    const groupKey = customer.phone ? customer.phone.trim() : customer.name.trim().toLowerCase();
+    
+    if (!groups[groupKey]) {
+      groups[groupKey] = {
+        customer: customer, // Just use the first customer profile found as the representative
         bills: []
       };
     }
-    groups[customer._id].bills.push(bill);
+    groups[groupKey].bills.push(bill);
     return groups;
   }, {});
 
