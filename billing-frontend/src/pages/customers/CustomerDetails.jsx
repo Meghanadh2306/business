@@ -3,8 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
+import { useAuth } from "../../context/AuthContext";
 
 export default function CustomerDetails() {
+  const { username } = useAuth();
+  const isVijaya = username === "vijaya";
+  
+  const parlorTitle1 = isVijaya ? "VIJAYA" : "OMKAR";
+  const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
   const { id } = useParams();
   const navigate = useNavigate();
   const [bills, setBills] = useState([]);
@@ -190,8 +196,8 @@ export default function CustomerDetails() {
           </div>
           
           <div class="header-center">
-            <h1>OMKAR</h1>
-            <h2>SAI TIRUMALA DAIRY PARLOR</h2>
+            <h1>${parlorTitle1}</h1>
+            <h2>${parlorTitle2}</h2>
             <p>Ramchandra Rao Peta, ELURU -534002</p>
             <p>Cell : 8309471669, 9848377920</p>
           </div>

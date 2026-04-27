@@ -5,8 +5,15 @@ import html2pdf from "html2pdf.js";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { useMemo } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function CreateBill() {
+  const { username } = useAuth();
+  const isVijaya = username === "vijaya";
+  
+  const parlorTitle1 = isVijaya ? "VIJAYA" : "OMKAR";
+  const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
+  
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([{ productId: "", name: "", quantity: "", price: "" }]);
@@ -275,8 +282,8 @@ export default function CreateBill() {
           </div>
           
           <div class="header-center">
-            <h1>OMKAR</h1>
-            <h2>SAI TIRUMALA DAIRY PARLOR</h2>
+            <h1>${parlorTitle1}</h1>
+            <h2>${parlorTitle2}</h2>
             <p>Ramchandra Rao Peta, ELURU -534002</p>
             <p>Cell : 8309471669, 9848377920</p>
           </div>
@@ -375,14 +382,14 @@ export default function CreateBill() {
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-2xl font-bold">New Dairy Bill</h2>
-          <p className="text-muted">Generate a new invoice for Omkar Sai Tirumula Dairy Parlor.</p>
+          <p className="text-muted">Generate a new invoice for {parlorTitle1} {parlorTitle2}.</p>
         </div>
         <button className="btn-primary" onClick={handleDownloadDraft} style={{ background: 'var(--primary)', color: '#fff' }}>📥 Download Draft</button>
       </div>
 
       {/* Printable Header - Visible mostly in print styles if we add them, but good for UI too */}
       <div className="card mb-4" style={{ textAlign: 'center', background: 'var(--primary)', color: '#fff', borderRadius: '12px 12px 0 0' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', letterSpacing: '1px', color: '#fff' }}>OMKAR SAI TIRUMULA DAIRY PARLOR</h1>
+        <h1 style={{ margin: 0, fontSize: '24px', letterSpacing: '1px', color: '#fff' }}>{parlorTitle1} {parlorTitle2}</h1>
         <p style={{ margin: '4px 0 0 0', opacity: 0.9 }}>Fresh Milk, Curd & Daily Dairy Products</p>
       </div>
 

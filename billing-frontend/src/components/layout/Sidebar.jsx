@@ -1,7 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Sidebar({ open, setOpen }) {
   const location = useLocation();
+  const { username } = useAuth();
+  const isVijaya = username === "vijaya";
+  const brandName = isVijaya ? "Vijaya Base" : "Omkar Sai Base";
+  const footerName = isVijaya ? "Vijaya Dairy" : "Omkar Sai Dairy";
 
   const links = [
     { name: "Dashboard", path: "/", icon: "🏠" },
@@ -21,7 +26,7 @@ export default function Sidebar({ open, setOpen }) {
         <div style={styles.logoBox}>
           🥛
         </div>
-        <h2 style={styles.logoText}>Omkar Sai Base</h2>
+        <h2 style={styles.logoText}>{brandName}</h2>
       </div>
 
       <nav style={styles.navContainer}>
@@ -47,7 +52,7 @@ export default function Sidebar({ open, setOpen }) {
       </nav>
       
       <div style={styles.footer}>
-        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>© 2026 Omkar Sai Dairy</p>
+        <p style={{fontSize: '12px', color: 'var(--text-muted)'}}>© 2026 {footerName}</p>
       </div>
     </div>
   );

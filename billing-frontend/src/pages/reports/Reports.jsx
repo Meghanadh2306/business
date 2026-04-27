@@ -2,8 +2,14 @@ import { useState, useEffect } from "react";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Reports() {
+  const { username } = useAuth();
+  const isVijaya = username === "vijaya";
+  
+  const parlorTitle1 = isVijaya ? "VIJAYA" : "OMKAR";
+  const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
   const [month, setMonth] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [data, setData] = useState(null);
@@ -188,8 +194,8 @@ export default function Reports() {
           </div>
           
           <div class="header-center">
-            <h1>OMKAR</h1>
-            <h2>SAI TIRUMALA DAIRY PARLOR</h2>
+            <h1>${parlorTitle1}</h1>
+            <h2>${parlorTitle2}</h2>
             <p>Ramchandra Rao Peta, ELURU -534002</p>
             <p>Cell : 8309471669, 9848377920</p>
           </div>

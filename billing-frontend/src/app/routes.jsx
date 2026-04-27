@@ -10,6 +10,7 @@ import CustomerDetails from "../pages/customers/CustomerDetails";
 import Products from "../pages/products/Products";
 import Reports from "../pages/reports/Reports";
 import Login from "../pages/auth/Login";
+import ChangePassword from "../pages/auth/ChangePassword";
 
 // 🔐 Protected Route
 function ProtectedRoute({ children }) {
@@ -66,6 +67,7 @@ export default function AppRoutes() {
         <Route path="/customers/:id" element={<CustomerDetails />} />
         <Route path="/products" element={<Products />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/change-password" element={<ChangePassword />} />
       </Route>
 
       {/* FALLBACK (SMART FIX) */}

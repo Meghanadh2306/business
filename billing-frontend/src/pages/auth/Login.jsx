@@ -12,14 +12,18 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    if (username === "omkarsai" && password === "omkarsai123") {
+    const storedOmkarPwd = localStorage.getItem("password_omkarsai") || "omkarsai123";
+    const storedVijayaPwd = localStorage.getItem("password_vijaya") || "vijaya123";
+
+    if ((username === "omkarsai" && password === storedOmkarPwd) || 
+        (username === "vijaya" && password === storedVijayaPwd)) {
       const fakeToken = "dairy-session-token";
 
-      login(fakeToken); // ✅ handles redirect
+      login(fakeToken, username); // ✅ handles redirect
 
       toast.success("Welcome back!");
     } else {
-      setError("Invalid credentials. Try omkarsai / omkarsai123");
+      setError("Invalid credentials. Try omkarsai / omkarsai123 or vijaya / vijaya123");
       toast.error("Invalid credentials");
     }
   };
@@ -57,7 +61,7 @@ export default function Login() {
               color: "#222",
             }}
           >
-            OmkarSai Thirumula Parlour
+            Dairy Parlour Billing
           </h2>
 
           <p style={{ fontSize: "13px", color: "#666", marginTop: "6px" }}>

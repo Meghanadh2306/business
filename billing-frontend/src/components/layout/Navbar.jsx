@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar({ setOpen }) {
-  const { logout } = useAuth();
+  const { logout, username } = useAuth();
+  const navigate = useNavigate();
+  const isVijaya = username === "vijaya";
+  const userInitials = isVijaya ? "VI" : "OM";
+  const userDisplayName = isVijaya ? "Vijaya Dairy" : "Omkar Sai";
 
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -124,7 +129,7 @@ export default function Navbar({ setOpen }) {
                 fontSize: "13px",
               }}
             >
-              OM
+              {userInitials}
             </div>
           </div>
 
@@ -158,15 +163,40 @@ export default function Navbar({ setOpen }) {
                     fontWeight: "600",
                   }}
                 >
-                  OM
+                  {userInitials}
                 </div>
 
                 <div style={{ fontSize: "14px", fontWeight: "600" }}>
-                  Omkar Sai
+                  {userDisplayName}
                 </div>
                 <div style={{ fontSize: "12px", opacity: 0.6 }}>
                   Store Manager
                 </div>
+              </div>
+
+              <div
+                style={{
+                  height: "1px",
+                  background: "var(--border-color)",
+                }}
+              />
+
+              {/* CHANGE PASSWORD */}
+              <div
+                onClick={() => {
+                  setShowDropdown(false);
+                  navigate("/change-password");
+                }}
+                style={{
+                  padding: "12px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  color: "var(--text-main)",
+                  fontWeight: "500",
+                  textAlign: "center",
+                }}
+              >
+                🔐 Change Password
               </div>
 
               <div
