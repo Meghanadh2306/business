@@ -13,7 +13,11 @@ export const createCustomer = async (req, res) => {
 export const getCustomers = async (req, res) => {
   try {
     const username = req.headers["x-username"] || "omkarsai";
-    const customers = await Customer.find({ generatedBy: username });
+    let query = { generatedBy: username };
+    if (username === "omkarsai") {
+      query = { $or: [{ generatedBy: "omkarsai" }, { generatedBy: { $exists: false } }, { generatedBy: null }] };
+    }
+    const customers = await Customer.find(query);
     res.json(customers);
   } catch (error) {
     res.status(500).json({ error: error.message });
