@@ -33,7 +33,7 @@ export const createBill = async (req, res) => {
       }
     }
 
-    const newBillData = { ...req.body, invoiceNumber };
+    const newBillData = { ...req.body, invoiceNumber, generatedBy: req.headers["x-username"] || "omkarsai" };
     const bill = await Bill.create(newBillData);
     res.status(201).json(bill);
   } catch (error) {
@@ -43,7 +43,13 @@ export const createBill = async (req, res) => {
 
 export const getBills = async (req, res) => {
   try {
-    const bills = await Bill.find().populate("customerId");
+    const username = req.headers["x-username"];
+    const query = {};
+    if (username === "vijaya") {
+      query.generatedBy = "vijaya";
+    }
+
+    const bills = await Bill.find(query).populate("customerId");
     res.json(bills);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -52,7 +58,13 @@ export const getBills = async (req, res) => {
 
 export const getBillsByCustomer = async (req, res) => {
   try {
-    const bills = await Bill.find({ customerId: req.params.id });
+    const username = req.headers["x-username"];
+    const query = { customerId: req.params.id };
+    if (username === "vijaya") {
+      query.generatedBy = "vijaya";
+    }
+
+    const bills = await Bill.find(query);
     res.json(bills);
   } catch (error) {
     res.status(500).json({ error: error.message });

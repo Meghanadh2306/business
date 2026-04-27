@@ -348,7 +348,22 @@ export default function CustomerDetails() {
               <tbody>
                 {filteredBills.map(b => (
                   <tr key={b._id}>
-                    <td><span style={{ fontWeight: 600 }}>{b.invoiceNumber || `#${b._id.slice(-6).toUpperCase()}`}</span></td>
+                    <td>
+                      <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {b.invoiceNumber || `#${b._id.slice(-6).toUpperCase()}`}
+                        {b.generatedBy && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px', 
+                            background: b.generatedBy === 'vijaya' ? '#e0e7ff' : '#fce7f3', 
+                            color: b.generatedBy === 'vijaya' ? '#3730a3' : '#9d174d' 
+                          }}>
+                            {b.generatedBy === 'vijaya' ? 'Vijaya' : 'Omkar'}
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td>{new Date(b.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
                     <td>{b.items?.map(i => `${i.name} (x${i.quantity})`).join(', ') || 'No items'}</td>
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>₹{(b.totalAmount || 0).toLocaleString()}</td>

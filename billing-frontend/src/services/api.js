@@ -4,13 +4,17 @@ const API = axios.create({
   baseURL: "https://billing-backend-5lkf.onrender.com/api",
 });
 
-// 🔐 REQUEST INTERCEPTOR (attach token)
+// 🔐 REQUEST INTERCEPTOR (attach token & username)
 API.interceptors.request.use(
   (config) => {
     const token = sessionStorage.getItem("token"); // ✅ sessionStorage
+    const username = sessionStorage.getItem("username"); // ✅ send username for branch/role logic
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (username) {
+      config.headers["X-Username"] = username;
     }
 
     return config;

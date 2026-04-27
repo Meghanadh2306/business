@@ -15,7 +15,8 @@ const billSchema = new mongoose.Schema({
   tax: Number,
   discount: Number,
   totalAmount: Number,
-  date: { type: Date, default: Date.now }
+  date: { type: Date, default: Date.now },
+  generatedBy: { type: String, default: "omkarsai" }
 });
 
 export default mongoose.model("Bill", billSchema);

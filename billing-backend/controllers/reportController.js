@@ -7,9 +7,15 @@ export const getMonthlyReport = async (req, res) => {
     const start = new Date(year, month - 1, 1);
     const end = new Date(year, month, 1);
 
-    const bills = await Bill.find({
+    const username = req.headers["x-username"];
+    const query = {
       date: { $gte: start, $lt: end }
-    });
+    };
+    if (username === "vijaya") {
+      query.generatedBy = "vijaya";
+    }
+
+    const bills = await Bill.find(query);
 
     const total = bills.reduce((sum, b) => sum + b.totalAmount, 0);
 
@@ -21,7 +27,13 @@ export const getMonthlyReport = async (req, res) => {
 
 export const getCustomerReport = async (req, res) => {
   try {
-    const bills = await Bill.find({ customerId: req.params.id });
+    const username = req.headers["x-username"];
+    const query = { customerId: req.params.id };
+    if (username === "vijaya") {
+      query.generatedBy = "vijaya";
+    }
+
+    const bills = await Bill.find(query);
 
     const total = bills.reduce((sum, b) => sum + b.totalAmount, 0);
 
