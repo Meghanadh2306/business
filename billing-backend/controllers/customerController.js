@@ -2,7 +2,8 @@ import Customer from "../models/Customer.js";
 
 export const createCustomer = async (req, res) => {
   try {
-    const customer = await Customer.create(req.body);
+    const data = { ...req.body, generatedBy: req.headers["x-username"] || "omkarsai" };
+    const customer = await Customer.create(data);
     res.json(customer);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -11,7 +12,8 @@ export const createCustomer = async (req, res) => {
 
 export const getCustomers = async (req, res) => {
   try {
-    const customers = await Customer.find();
+    const username = req.headers["x-username"] || "omkarsai";
+    const customers = await Customer.find({ generatedBy: username });
     res.json(customers);
   } catch (error) {
     res.status(500).json({ error: error.message });

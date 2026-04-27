@@ -2,7 +2,8 @@ import Product from "../models/Product.js";
 
 export const createProduct = async (req, res) => {
   try {
-    const product = await Product.create(req.body);
+    const data = { ...req.body, generatedBy: req.headers["x-username"] || "omkarsai" };
+    const product = await Product.create(data);
     res.json(product);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -11,7 +12,8 @@ export const createProduct = async (req, res) => {
 
 export const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const username = req.headers["x-username"] || "omkarsai";
+    const products = await Product.find({ generatedBy: username });
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });

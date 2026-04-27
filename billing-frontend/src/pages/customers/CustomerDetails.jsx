@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 export default function CustomerDetails() {
   const { username } = useAuth();
   const isVijaya = username === "vijaya";
-  
+
   const parlorTitle1 = isVijaya ? "VIJAYA" : "OMKAR";
   const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
   const { id } = useParams();
@@ -60,7 +60,7 @@ export default function CustomerDetails() {
 
   const handleDownload = (bill) => {
     const invoiceNumber = bill.invoiceNumber || ("Invoice #" + bill._id.slice(-6).toUpperCase());
-    
+
     const element = document.createElement('div');
     element.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #000; background: #fff; width: 100%; box-sizing: border-box;">
@@ -269,11 +269,11 @@ export default function CustomerDetails() {
     toast.loading("Generating PDF...", { id: "pdf-toast" });
 
     const opt = {
-      margin:       0.2,
-      filename:     `${invoiceNumber.replace('#', '')}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      margin: 0.2,
+      filename: `${invoiceNumber.replace('#', '')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
 
     html2pdf().from(element).set(opt).save().then(() => {
@@ -300,9 +300,9 @@ export default function CustomerDetails() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <label style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>Search by Date:</label>
-          <input 
-            type="date" 
-            value={searchDate} 
+          <input
+            type="date"
+            value={searchDate}
             onChange={e => setSearchDate(e.target.value)}
             style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}
           />
@@ -352,12 +352,12 @@ export default function CustomerDetails() {
                       <span style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {b.invoiceNumber || `#${b._id.slice(-6).toUpperCase()}`}
                         {b.generatedBy && (
-                          <span style={{ 
-                            fontSize: '10px', 
-                            padding: '2px 6px', 
-                            borderRadius: '4px', 
-                            background: b.generatedBy === 'vijaya' ? '#e0e7ff' : '#fce7f3', 
-                            color: b.generatedBy === 'vijaya' ? '#3730a3' : '#9d174d' 
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: b.generatedBy === 'vijaya' ? '#e0e7ff' : '#fce7f3',
+                            color: b.generatedBy === 'vijaya' ? '#3730a3' : '#9d174d'
                           }}>
                             {b.generatedBy === 'vijaya' ? 'Vijaya' : 'Omkar'}
                           </span>
@@ -369,13 +369,13 @@ export default function CustomerDetails() {
                     <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>₹{(b.totalAmount || 0).toLocaleString()}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          style={{ background: "var(--bg-color)", color: "var(--primary)", border: "1px solid var(--primary)", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }} 
+                        <button
+                          style={{ background: "var(--bg-color)", color: "var(--primary)", border: "1px solid var(--primary)", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
                           onClick={() => handleDownload(b)}>
                           Download
                         </button>
-                        <button 
-                          style={{ background: "var(--bg-color)", color: "#ef4444", border: "1px solid #ef4444", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }} 
+                        <button
+                          style={{ background: "var(--bg-color)", color: "#ef4444", border: "1px solid #ef4444", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
                           onClick={() => handleDelete(b._id)}>
                           Delete
                         </button>
