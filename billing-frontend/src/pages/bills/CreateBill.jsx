@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
 import { useMemo } from "react";
@@ -18,7 +19,10 @@ export default function CreateBill() {
   const [products, setProducts] = useState([]);
   const [items, setItems] = useState([{ productId: "", name: "", quantity: "", price: "" }]);
   const [customerId, setCustomerId] = useState("");
+  const [billDate, setBillDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+  const [sharingImage, setSharingImage] = useState(false);
+  const isSharingRef = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -122,7 +126,8 @@ export default function CreateBill() {
         subtotal,
         tax,
         discount: 0,
-        totalAmount: total
+        totalAmount: total,
+        date: billDate ? new Date(billDate) : new Date()
       });
       toast.success("Bill Created Successfully!");
       setTimeout(() => navigate("/bills"), 1000);
@@ -278,7 +283,7 @@ export default function CreateBill() {
           <div class="header-top">
             <span>No. DRAFT</span>
             <span class="cash-bill">Cash Bill</span>
-            <span>Date: ${new Date().toLocaleDateString()}</span>
+            <span>Date: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
           </div>
           
           <div class="header-center">
@@ -367,6 +372,214 @@ export default function CreateBill() {
       toast.error("Failed to generate PDF", { id: "pdf-toast" });
     });
   };
+
+  // Generate invoice image blob for sharing (similar to pocketops)
+  const generateInvoiceImageBlob = async () => {
+    if (!customerId) return null;
+    const validItems = items.filter(
+      i => i.productId && i.quantity !== "" && i.quantity > 0 && i.price !== "" && i.price > 0
+    );
+    if (validItems.length === 0) return null;
+
+    const customer = customers.find(c => c._id === customerId);
+    const dateStr = billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString();
+
+    const shareCardHtml = `
+      <div id="share-invoice-card" style="box-sizing: border-box; width: 760px; background: #ffffff; font-family: Arial, sans-serif; padding: 30px; color: #000;">
+        <style>
+          #share-invoice-card * { box-sizing: border-box; }
+          #share-invoice-card table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
+          #share-invoice-card th, #share-invoice-card td { border: 1px solid #000; padding: 8px; }
+          #share-invoice-card th { text-align: center; font-weight: bold; font-size: 15px; }
+        </style>
+        <div style="border: 1px solid #000; outline: 2px solid #000; outline-offset: -4px; padding: 20px 25px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 16px; margin-bottom: 5px;">
+            <span>No. DRAFT</span>
+            <span style="text-decoration: underline; font-style: italic;">Cash Bill</span>
+            <span>Date: ${dateStr}</span>
+          </div>
+          <div style="text-align: center; margin-bottom: 15px;">
+            <h1 style="margin: 0; font-size: 32px; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">${parlorTitle1}</h1>
+            <h2 style="margin: 5px 0 0 0; font-size: 26px; font-family: 'Times New Roman', Times, serif;">${parlorTitle2}</h2>
+            <p style="margin: 4px 0; font-size: 15px;">Ramchandra Rao Peta, ELURU -534002</p>
+            <p style="margin: 4px 0; font-size: 15px;">Cell : 8309471669, 9848377920</p>
+          </div>
+          <div style="margin-bottom: 15px; line-height: 1.8;">
+            <div style="display: flex; align-items: flex-end; margin-bottom: 8px;">
+              <span style="font-weight: bold; margin-right: 8px; font-size: 16px;">Name.</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000; font-family: 'Times New Roman', Times, serif; font-size: 18px; font-style: italic; color: #111; padding-left: 10px;">${customer?.name || ''}</span>
+            </div>
+            <div style="display: flex; align-items: flex-end; margin-bottom: 8px;">
+              <span style="font-weight: bold; margin-right: 8px; font-size: 16px;">Mobile No.</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000; font-family: 'Times New Roman', Times, serif; font-size: 18px; font-style: italic; color: #111; padding-left: 10px;">${customer?.phone || ''}</span>
+            </div>
+            <div style="display: flex; align-items: flex-end; margin-bottom: 8px;">
+              <span style="font-weight: bold; margin-right: 8px; font-size: 16px;">Address.</span>
+              <span style="flex: 1; border-bottom: 1px dotted #000; font-family: 'Times New Roman', Times, serif; font-size: 18px; font-style: italic; color: #111; padding-left: 10px;">${customer?.address || ''}</span>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 5%; text-align: center;">S.<br>No.</th>
+                <th style="width: 55%;">Order Particulars</th>
+                <th style="width: 10%; text-align: center;">Qty</th>
+                <th style="width: 10%; text-align: center;">Rate</th>
+                <th style="width: 20%; text-align: right;">Amount<br>Rs.</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${validItems.map((item, index) => `
+                <tr>
+                  <td style="text-align: center; font-weight: bold;">${index + 1}</td>
+                  <td style="font-family: 'Times New Roman', Times, serif; font-size: 18px;">${item.name || ''}</td>
+                  <td style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 18px;">${item.quantity || ''}</td>
+                  <td style="text-align: center; font-family: 'Times New Roman', Times, serif; font-size: 18px;">${item.price || ''}</td>
+                  <td style="text-align: right; font-family: 'Times New Roman', Times, serif; font-size: 18px;">${(item.quantity * item.price) || ''}</td>
+                </tr>
+              `).join('')}
+              <tr><td style="height: 30px;"></td><td></td><td></td><td></td><td></td></tr>
+              <tr style="border-top: 2px solid #000;">
+                <td colspan="4" style="text-align: center; font-weight: bold;">TOTAL</td>
+                <td style="text-align: right; font-weight: bold; font-family: 'Times New Roman', Times, serif; font-size: 18px;">${total}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="border: 2px solid #000; border-top: none; padding: 10px 20px 20px 20px;">
+            <div style="text-align: center; margin-bottom: 10px;">
+              <span style="background-color: #000; color: #fff; padding: 4px 20px; border-radius: 20px; font-weight: bold; display: inline-block; font-size: 15px;">Instructions to be Followed</span>
+            </div>
+            <ol style="list-style-type: decimal; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
+              <li>Paid amount is not refundable</li>
+              <li>Advance to be paid for Milk Cans</li>
+              <li>Ordered Milk cannot be taken back under any circumtances</li>
+            </ol>
+            <div style="display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; font-style: italic; font-family: 'Times New Roman', Times, serif; font-size: 18px;">
+              <span>Customer Signature</span>
+              <span>Signature</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position: fixed; top: -99999px; left: -99999px; width: 800px; background: #ffffff; z-index: -9999; padding: 20px; box-sizing: border-box;';
+    wrapper.innerHTML = shareCardHtml;
+    document.body.appendChild(wrapper);
+
+    try {
+      const cardElement = wrapper.querySelector('#share-invoice-card') || wrapper.firstElementChild;
+      const canvas = await html2canvas(cardElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 760,
+        windowWidth: 1200,
+      });
+
+      if (document.body.contains(wrapper)) {
+        document.body.removeChild(wrapper);
+      }
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (!blob) { resolve(null); return; }
+          const filename = `Draft_Invoice.png`;
+          const file = new File([blob], filename, { type: 'image/png' });
+          resolve({ blob, file });
+        }, 'image/png');
+      });
+    } catch (err) {
+      console.error('html2canvas generation failed', err);
+      if (document.body.contains(wrapper)) {
+        document.body.removeChild(wrapper);
+      }
+      return null;
+    }
+  };
+
+  // Share invoice as image
+  const handleShare = async () => {
+    if (!customerId) return toast.error('Please select a customer first');
+    const validItems = items.filter(
+      i => i.productId && i.quantity !== "" && i.quantity > 0 && i.price !== "" && i.price > 0
+    );
+    if (validItems.length === 0) return toast.error('Please add at least one valid item');
+    if (isSharingRef.current) return;
+    isSharingRef.current = true;
+    setSharingImage(true);
+
+    try {
+      const customer = customers.find(c => c._id === customerId);
+      const res = await generateInvoiceImageBlob();
+      if (!res) {
+        toast.error('Failed to generate invoice image');
+        return;
+      }
+
+      const { blob, file } = res;
+      const msg = `${parlorTitle1} ${parlorTitle2}\n\nDate: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}\nCustomer: ${customer?.name || 'N/A'}\nTotal: ₹${total.toLocaleString()}`;
+
+      // Try Web Share API (works on mobile)
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        let shared = false;
+
+        // Try native file sharing first
+        if (file && typeof navigator.canShare === 'function') {
+          try {
+            if (navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [new File([blob], 'Draft_Invoice.png', { type: 'image/png', lastModified: Date.now() })],
+                title: 'Draft Invoice',
+              });
+              shared = true;
+            }
+          } catch (fileErr) {
+            if (fileErr.name === 'AbortError') {
+              shared = true; // User cancelled
+            } else {
+              console.error('File share failed, falling back:', fileErr);
+            }
+          }
+        }
+
+        // Fallback to text share
+        if (!shared) {
+          try {
+            await navigator.share({ title: 'Draft Invoice', text: msg });
+          } catch (textErr) {
+            if (textErr.name !== 'AbortError') {
+              console.error('Text share failed:', textErr);
+            }
+          }
+        }
+      } else {
+        // Desktop: copy image to clipboard or download
+        if (blob) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            toast.success('Invoice image copied to clipboard!');
+          } catch {
+            // Fallback: download the image
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Draft_Invoice.png';
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.success('Invoice image downloaded!');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Share error:', e);
+      toast.error('Failed to share invoice');
+    } finally {
+      isSharingRef.current = false;
+      setSharingImage(false);
+    }
+  };
   const productOptions = useMemo(() =>
     products.map(p => ({
       value: p._id,
@@ -384,7 +597,12 @@ export default function CreateBill() {
           <h2 className="text-2xl font-bold">New Dairy Bill</h2>
           <p className="text-muted">Generate a new invoice for {parlorTitle1} {parlorTitle2}.</p>
         </div>
-        <button className="btn-primary" onClick={handleDownloadDraft} style={{ background: 'var(--primary)', color: '#fff' }}>📥 Download Draft</button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button className="btn-primary" onClick={handleShare} disabled={sharingImage} style={{ background: '#25D366', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {sharingImage ? '⏳ Generating...' : '📤 Share'}
+          </button>
+          <button className="btn-primary" onClick={handleDownloadDraft} style={{ background: 'var(--primary)', color: '#fff' }}>📥 Download Draft</button>
+        </div>
       </div>
 
       {/* Printable Header - Visible mostly in print styles if we add them, but good for UI too */}
@@ -395,26 +613,44 @@ export default function CreateBill() {
 
       <div className="card glass mb-4">
         <h3 className="mb-4" style={{ fontSize: '18px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Customer Details</h3>
-        <div>
-          <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 500 }}>Select Customer</label>
-          <select
-            value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              background: 'var(--bg-card)',
-              color: 'var(--text-color)',
-              border: '1px solid var(--border-color)',
-              padding: '10px',
-              borderRadius: '8px'
-            }}
-          >
-            <option value="">-- Choose Customer --</option>
-            {customers.map(c => (
-              <option key={c._id} value={c._id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 300px' }}>
+            <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 500 }}>Select Customer</label>
+            <select
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                background: 'var(--bg-card)',
+                color: 'var(--text-color)',
+                border: '1px solid var(--border-color)',
+                padding: '10px',
+                borderRadius: '8px'
+              }}
+            >
+              <option value="">-- Choose Customer --</option>
+              {customers.map(c => (
+                <option key={c._id} value={c._id}>{c.name} {c.phone ? `(${c.phone})` : ''}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ flex: '0 1 220px' }}>
+            <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: 500 }}>Bill Date</label>
+            <input
+              type="date"
+              value={billDate}
+              onChange={(e) => setBillDate(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'var(--bg-card)',
+                color: 'var(--text-color)',
+                border: '1px solid var(--border-color)',
+                padding: '10px',
+                borderRadius: '8px'
+              }}
+            />
+          </div>
         </div>
       </div>
 
