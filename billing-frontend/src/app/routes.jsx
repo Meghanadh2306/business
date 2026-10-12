@@ -62,6 +62,7 @@ export default function AppRoutes() {
       >
         <Route path="/" element={<Dashboard />} />
         <Route path="/create" element={<CreateBill />} />
+        <Route path="/bills/edit/:id" element={<CreateBill />} />
         <Route path="/bills" element={<BillsList />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:id" element={<CustomerDetails />} />

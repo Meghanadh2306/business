@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams, useLocation } from "react-router-dom";
 import Select from "react-select";
-import { useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function CreateBill() {
@@ -24,23 +23,93 @@ export default function CreateBill() {
   const [sharingImage, setSharingImage] = useState(false);
   const isSharingRef = useRef(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { id: paramBillId } = useParams();
+  const editBillId = paramBillId || searchParams.get("edit");
+  const [existingBillNumber, setExistingBillNumber] = useState("");
+  const [loadingBill, setLoadingBill] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    let isMounted = true;
 
-  const loadData = async () => {
-    try {
-      const [cRes, pRes] = await Promise.all([
-        API.get("/customers").catch(() => ({ data: [] })),
-        API.get("/products").catch(() => ({ data: [] }))
-      ]);
-      setCustomers(cRes.data || []);
-      setProducts(pRes.data || []);
-    } catch (err) {
-      console.error("Failed to load initial data", err);
-    }
-  };
+    const populateBillData = (b, availableProducts = []) => {
+      if (!b) return;
+      if (b.customerId) {
+        setCustomerId(typeof b.customerId === 'object' ? (b.customerId._id || '') : b.customerId);
+      }
+      if (b.date) {
+        setBillDate(new Date(b.date).toISOString().split('T')[0]);
+      }
+      if (b.invoiceNumber) {
+        setExistingBillNumber(b.invoiceNumber);
+      }
+      if (b.items && b.items.length > 0) {
+        setItems(b.items.map(i => {
+          const prodId = typeof i.productId === 'object' ? i.productId?._id : (i.productId || "");
+          const matched = availableProducts.find(p => p._id === prodId || p.name.toLowerCase() === (i.name || '').toLowerCase());
+          return {
+            productId: matched ? matched._id : (prodId || ""),
+            name: i.name || (matched ? matched.name : ""),
+            quantity: i.quantity ?? "",
+            price: i.price ?? ""
+          };
+        }));
+      }
+    };
+
+    const fetchData = async () => {
+      try {
+        const [cRes, pRes] = await Promise.all([
+          API.get("/customers").catch(() => ({ data: [] })),
+          API.get("/products").catch(() => ({ data: [] }))
+        ]);
+        if (!isMounted) return;
+        const fetchedCustomers = cRes.data || [];
+        const fetchedProducts = pRes.data || [];
+        setCustomers(fetchedCustomers);
+        setProducts(fetchedProducts);
+
+        if (editBillId) {
+          // If bill was passed via navigation state, load it immediately
+          if (location.state?.bill) {
+            populateBillData(location.state.bill, fetchedProducts);
+          } else {
+            setLoadingBill(true);
+            try {
+              let b = null;
+              try {
+                const bRes = await API.get(`/bills/${editBillId}`);
+                b = bRes.data;
+              } catch {
+                // Fallback: search in all bills
+                const allRes = await API.get('/bills');
+                b = (allRes.data || []).find(item => item._id === editBillId);
+              }
+
+              if (b && isMounted) {
+                populateBillData(b, fetchedProducts);
+              } else if (!b && isMounted) {
+                toast.error("Invoice details not found");
+              }
+            } catch (bErr) {
+              console.error("Error loading bill details", bErr);
+              toast.error("Failed to load invoice details");
+            } finally {
+              if (isMounted) setLoadingBill(false);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load initial data", err);
+      }
+    };
+
+    fetchData();
+    return () => {
+      isMounted = false;
+    };
+  }, [editBillId, location.state]);
 
   const addItem = () => {
     setItems([...items, { productId: "", name: "", quantity: "", price: "" }]);
@@ -120,20 +189,53 @@ export default function CreateBill() {
 
     setLoading(true);
     try {
-      await API.post("/bills", {
-        customerId,
-        items: validItems,
-        subtotal,
-        tax,
-        discount: 0,
-        totalAmount: total,
-        date: billDate ? new Date(billDate) : new Date()
-      });
-      toast.success("Bill Created Successfully!");
-      setTimeout(() => navigate("/bills"), 1000);
+      if (editBillId) {
+        try {
+          await API.put(`/bills/${editBillId}`, {
+            customerId,
+            items: validItems,
+            subtotal,
+            tax,
+            discount: 0,
+            totalAmount: total,
+            date: billDate ? new Date(billDate) : new Date()
+          });
+          toast.success("Bill Updated Successfully!");
+          setTimeout(() => navigate(-1), 800);
+        } catch (putErr) {
+          if (putErr.response?.status === 404) {
+            await API.delete(`/bills/${editBillId}`);
+            await API.post("/bills", {
+              customerId,
+              items: validItems,
+              subtotal,
+              tax,
+              discount: 0,
+              totalAmount: total,
+              date: billDate ? new Date(billDate) : new Date()
+            });
+            toast.success("Bill Updated Successfully!");
+            setTimeout(() => navigate(-1), 800);
+          } else {
+            throw putErr;
+          }
+        }
+      } else {
+        await API.post("/bills", {
+          customerId,
+          items: validItems,
+          subtotal,
+          tax,
+          discount: 0,
+          totalAmount: total,
+          date: billDate ? new Date(billDate) : new Date()
+        });
+        toast.success("Bill Created Successfully!");
+        setTimeout(() => navigate("/bills"), 1000);
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to create bill");
+      toast.error(editBillId ? "Failed to update bill" : "Failed to create bill");
     }
     setLoading(false);
   };
@@ -519,7 +621,7 @@ export default function CreateBill() {
       }
 
       const { blob, file } = res;
-      const msg = `${parlorTitle1} ${parlorTitle2}\n\nDate: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}\nCustomer: ${customer?.name || 'N/A'}\nTotal: ₹${total.toLocaleString()}`;
+      const msg = `${parlorTitle1} ${parlorTitle2}\n\nDate: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}\nCustomer: ${customer?.name || ''}\nTotal: ₹${total.toLocaleString()}`;
 
       // Try Web Share API (works on mobile)
       if (typeof navigator !== 'undefined' && navigator.share) {
@@ -592,10 +694,23 @@ export default function CreateBill() {
 
   return (
     <div>
+      {editBillId && (
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 500 }}
+        >
+          ← Back to Invoice
+        </button>
+      )}
+
       <div className="flex justify-between items-center mb-4" style={{ flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 className="text-2xl font-bold">New Dairy Bill</h2>
-          <p className="text-muted">Generate a new invoice for {parlorTitle1} {parlorTitle2}.</p>
+          <h2 className="text-2xl font-bold">
+            {editBillId ? `Edit Invoice ${existingBillNumber ? `#${existingBillNumber.replace('INV-', '')}` : ''}` : "New Dairy Bill"}
+          </h2>
+          <p className="text-muted">
+            {editBillId ? "Modify items, prices, quantities, customer, or billing date." : `Generate a new invoice for ${parlorTitle1} ${parlorTitle2}.`}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button className="btn-primary" onClick={handleShare} disabled={sharingImage} style={{ background: '#25D366', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -678,7 +793,10 @@ export default function CreateBill() {
                     <td>
                       <Select
                         options={productOptions}
-                        value={productOptions.find(opt => opt.value === item.productId) || null}
+                        value={
+                          productOptions.find(opt => opt.value === item.productId) ||
+                          (item.name ? { value: item.productId || item.name, label: item.name } : null)
+                        }
                         onChange={(selected) =>
                           updateItem(i, "productId", selected ? selected.value : "")
                         }
@@ -769,7 +887,10 @@ export default function CreateBill() {
             <div key={i} className="mobile-card">
               <Select
                 options={productOptions}
-                value={productOptions.find(opt => opt.value === item.productId) || null}
+                value={
+                  productOptions.find(opt => opt.value === item.productId) ||
+                  (item.name ? { value: item.productId || item.name, label: item.name } : null)
+                }
                 onChange={(selected) =>
                   updateItem(i, "productId", selected ? selected.value : "")
                 }
@@ -875,11 +996,17 @@ export default function CreateBill() {
 
           <button
             className="btn-primary"
-            style={{ width: '100%', marginTop: '20px', padding: '12px', fontSize: '16px' }}
+            style={{
+              width: '100%',
+              marginTop: '20px',
+              padding: '12px',
+              fontSize: '16px',
+              background: editBillId ? '#0284c7' : undefined
+            }}
             onClick={submitBill}
-            disabled={loading}
+            disabled={loading || loadingBill}
           >
-            {loading ? "Processing..." : "Generate Invoice"}
+            {loading ? "Processing..." : (editBillId ? "Update Invoice" : "Generate Invoice")}
           </button>
         </div>
       </div>

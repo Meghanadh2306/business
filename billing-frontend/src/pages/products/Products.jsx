@@ -5,11 +5,8 @@ import toast from "react-hot-toast";
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    load();
-  }, []);
 
   const load = async () => {
     try {
@@ -22,18 +19,48 @@ export default function Products() {
     }
   };
 
-  const addProduct = async (e) => {
+  useEffect(() => {
+    let isMounted = true;
+    API.get("/products")
+      .then(res => {
+        if (isMounted) setProducts(res.data || []);
+      })
+      .catch(err => console.error(err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name) return toast.error("Product name is required");
 
     try {
-      await API.post("/products", { name });
-      toast.success("Product added successfully");
+      if (editingId) {
+        await API.put(`/products/${editingId}`, { name });
+        toast.success("Product updated successfully");
+        setEditingId(null);
+      } else {
+        await API.post("/products", { name });
+        toast.success("Product added successfully");
+      }
       setName("");
       load();
-    } catch (err) {
-      toast.error("Error adding product");
+    } catch {
+      toast.error(editingId ? "Error updating product" : "Error adding product");
     }
+  };
+
+  const startEdit = (p) => {
+    setEditingId(p._id);
+    setName(p.name || "");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setName("");
   };
 
   const handleDelete = async (id) => {
@@ -41,6 +68,7 @@ export default function Products() {
       try {
         await API.delete(`/products/${id}`);
         setProducts(products.filter(p => p._id !== id));
+        if (editingId === id) cancelEdit();
         toast.success("Product deleted successfully");
       } catch (err) {
         console.error("Error deleting product", err);
@@ -60,8 +88,13 @@ export default function Products() {
 
       <div className="dashboard-grid mb-4">
         <div className="card glass" style={{ gridColumn: 'span 1', height: 'fit-content' }}>
-          <h3 className="mb-4">Add New Product</h3>
-          <form onSubmit={addProduct} className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>{editingId ? "✏️ Edit Product" : "Add New Product"}</h3>
+            {editingId && (
+              <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>Editing</span>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Product Name *</label>
               <input 
@@ -72,7 +105,29 @@ export default function Products() {
                 required
               />
             </div>
-            <button type="submit" className="btn-primary mt-4">Save Product</button>
+
+            {editingId ? (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Update Product</button>
+                <button 
+                  type="button" 
+                  onClick={cancelEdit}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button type="submit" className="btn-primary mt-4">Save Product</button>
+            )}
           </form>
         </div>
 
@@ -94,24 +149,43 @@ export default function Products() {
                 </thead>
                 <tbody>
                   {products.map((p, idx) => (
-                    <tr key={p._id}>
+                    <tr key={p._id} style={{ backgroundColor: editingId === p._id ? 'rgba(99, 102, 241, 0.08)' : undefined }}>
                       <td style={{ color: 'var(--text-muted)' }}>PROD-{p._id ? p._id.slice(-4).toUpperCase() : idx}</td>
                       <td style={{ fontWeight: 600 }}>{p.name}</td>
                       <td>
-                        <button 
-                          onClick={() => handleDelete(p._id)}
-                          style={{
-                            background: "var(--bg-color)",
-                            color: "#ef4444",
-                            border: "1px solid #ef4444",
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            fontSize: "12px",
-                            fontWeight: 600
-                          }}
-                        >
-                          Delete
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => startEdit(p)}
+                            style={{
+                              background: "var(--bg-color)",
+                              color: "var(--primary)",
+                              border: "1px solid var(--primary)",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer"
+                            }}
+                            title="Edit product name"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(p._id)}
+                            style={{
+                              background: "var(--bg-color)",
+                              color: "#ef4444",
+                              border: "1px solid #ef4444",
+                              padding: "6px 12px",
+                              borderRadius: "6px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer"
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -87,6 +87,47 @@ export const getBillsByCustomer = async (req, res) => {
   }
 };
 
+export const getBillById = async (req, res) => {
+  try {
+    const bill = await Bill.findById(req.params.id).populate("customerId");
+    if (!bill) {
+      return res.status(404).json({ error: "Bill not found" });
+    }
+    res.json(bill);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const updateBill = async (req, res) => {
+  try {
+    const { customerId, items, subtotal, tax, discount, totalAmount, date } = req.body;
+    const updateData = {
+      customerId,
+      items,
+      subtotal,
+      tax,
+      discount: discount || 0,
+      totalAmount
+    };
+    if (date) {
+      updateData.date = new Date(date);
+    }
+
+    const updatedBill = await Bill.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+    if (!updatedBill) {
+      return res.status(404).json({ error: "Bill not found" });
+    }
+    res.json(updatedBill);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const deleteBill = async (req, res) => {
   try {
     const deletedBill = await Bill.findByIdAndDelete(req.params.id);

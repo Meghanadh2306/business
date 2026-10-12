@@ -8,12 +8,9 @@ export default function Customers() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadCustomers();
-  }, []);
 
   const loadCustomers = async () => {
     try {
@@ -26,20 +23,54 @@ export default function Customers() {
     }
   };
 
-  const addCustomer = async (e) => {
+  useEffect(() => {
+    let isMounted = true;
+    API.get("/customers")
+      .then(res => {
+        if (isMounted) setCustomers(res.data || []);
+      })
+      .catch(err => console.error(err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name) return toast.error("Name is required");
 
     try {
-      await API.post("/customers", { name, phone, address });
-      toast.success("Customer added successfully");
+      if (editingId) {
+        await API.put(`/customers/${editingId}`, { name, phone, address });
+        toast.success("Customer updated successfully");
+        setEditingId(null);
+      } else {
+        await API.post("/customers", { name, phone, address });
+        toast.success("Customer added successfully");
+      }
       setName("");
       setPhone("");
       setAddress("");
       loadCustomers();
-    } catch (err) {
-      toast.error("Error adding customer");
+    } catch {
+      toast.error(editingId ? "Error updating customer" : "Error adding customer");
     }
+  };
+
+  const startEdit = (c) => {
+    setEditingId(c._id);
+    setName(c.name || "");
+    setPhone(c.phone || "");
+    setAddress(c.address || "");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setName("");
+    setPhone("");
+    setAddress("");
   };
 
   const handleDelete = async (id) => {
@@ -47,6 +78,7 @@ export default function Customers() {
       try {
         await API.delete(`/customers/${id}`);
         setCustomers(customers.filter(c => c._id !== id));
+        if (editingId === id) cancelEdit();
         toast.success("Customer deleted successfully");
       } catch (err) {
         console.error("Error deleting customer", err);
@@ -66,8 +98,13 @@ export default function Customers() {
 
       <div className="dashboard-grid mb-4">
         <div className="card glass" style={{ gridColumn: 'span 1', height: 'fit-content' }}>
-          <h3 className="mb-4">Add New Customer</h3>
-          <form onSubmit={addCustomer} className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>{editingId ? "✏️ Edit Customer" : "Add New Customer"}</h3>
+            {editingId && (
+              <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>Editing</span>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} className="flex" style={{ flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Full Name *</label>
               <input 
@@ -85,7 +122,6 @@ export default function Customers() {
                 value={phone} 
                 onChange={(e) => setPhone(e.target.value)} 
                 style={{ width: '100%' }}
-
               />
             </div>
             <div>
@@ -97,7 +133,29 @@ export default function Customers() {
                 style={{ width: '100%' }}
               />
             </div>
-            <button type="submit" className="btn-primary mt-4">Save Customer</button>
+
+            {editingId ? (
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button type="submit" className="btn-primary" style={{ flex: 1 }}>Update Customer</button>
+                <button 
+                  type="button" 
+                  onClick={cancelEdit} 
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontWeight: 600
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button type="submit" className="btn-primary mt-4">Save Customer</button>
+            )}
           </form>
         </div>
 
@@ -120,12 +178,19 @@ export default function Customers() {
                 </thead>
                 <tbody>
                   {customers.map(c => (
-                    <tr key={c._id}>
+                    <tr key={c._id} style={{ backgroundColor: editingId === c._id ? 'rgba(99, 102, 241, 0.08)' : undefined }}>
                       <td style={{ fontWeight: 500 }}>{c.name}</td>
-                      <td>{c.phone}</td>
-                      <td>{c.address || 'N/A'}</td>
+                      <td>{c.phone && c.phone !== 'N/A' ? c.phone : ''}</td>
+                      <td>{c.address && c.address !== 'N/A' ? c.address : ''}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => startEdit(c)}
+                            style={{ ...styles.actionBtn, borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                            title="Edit customer details"
+                          >
+                            Edit
+                          </button>
                           <button 
                             onClick={() => navigate(`/customers/${c._id}`)}
                             style={styles.actionBtn}
@@ -160,6 +225,7 @@ const styles = {
     padding: "6px 12px",
     borderRadius: "6px",
     fontSize: "12px",
-    fontWeight: 600
+    fontWeight: 600,
+    cursor: "pointer"
   }
 };
