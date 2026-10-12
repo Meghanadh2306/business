@@ -6,6 +6,8 @@ import html2canvas from "html2canvas";
 import { useNavigate, useSearchParams, useParams, useLocation } from "react-router-dom";
 import Select from "react-select";
 import { useAuth } from "../../context/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function CreateBill() {
   const { username } = useAuth();
@@ -29,6 +31,7 @@ export default function CreateBill() {
   const editBillId = paramBillId || searchParams.get("edit");
   const [existingBillNumber, setExistingBillNumber] = useState("");
   const [loadingBill, setLoadingBill] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     let isMounted = true;
@@ -230,6 +233,9 @@ export default function CreateBill() {
           totalAmount: total,
           date: billDate ? new Date(billDate) : new Date()
         });
+        queryClient.invalidateQueries({ queryKey: ["bills"] });
+        queryClient.invalidateQueries({ queryKey: ["customer-bills"] });
+        queryClient.invalidateQueries({ queryKey: ["dashboard-data"] });
         toast.success("Bill Created Successfully!");
         setTimeout(() => navigate("/bills"), 1000);
       }
@@ -385,7 +391,7 @@ export default function CreateBill() {
           <div class="header-top">
             <span>No. DRAFT</span>
             <span class="cash-bill">Cash Bill</span>
-            <span>Date: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+            <span>Date: ${formatDate(billDate || new Date())}</span>
           </div>
           
           <div class="header-center">
@@ -484,7 +490,7 @@ export default function CreateBill() {
     if (validItems.length === 0) return null;
 
     const customer = customers.find(c => c._id === customerId);
-    const dateStr = billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString();
+    const dateStr = formatDate(billDate || new Date());
 
     const shareCardHtml = `
       <div id="share-invoice-card" style="box-sizing: border-box; width: 760px; background: #ffffff; font-family: Arial, sans-serif; padding: 30px; color: #000;">
@@ -621,7 +627,7 @@ export default function CreateBill() {
       }
 
       const { blob, file } = res;
-      const msg = `${parlorTitle1} ${parlorTitle2}\n\nDate: ${billDate ? new Date(billDate).toLocaleDateString() : new Date().toLocaleDateString()}\nCustomer: ${customer?.name || ''}\nTotal: ₹${total.toLocaleString()}`;
+      const msg = `${parlorTitle1} ${parlorTitle2}\n\nDate: ${formatDate(billDate || new Date())}\nCustomer: ${customer?.name || ''}\nTotal: ₹${total.toLocaleString()}`;
 
       // Try Web Share API (works on mobile)
       if (typeof navigator !== 'undefined' && navigator.share) {

@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
 import { useAuth } from "../../context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { formatDate } from "../../utils/dateUtils";
+import Pagination from "../../components/ui/Pagination";
 
 export default function Reports() {
   const { username } = useAuth();
@@ -12,16 +15,21 @@ export default function Reports() {
   const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
   const [month, setMonth] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
-  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const [customers, setCustomers] = useState([]);
   const [customerId, setCustomerId] = useState("");
   const [customerBills, setCustomerBills] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  useEffect(() => {
-    API.get("/customers").then(res => setCustomers(res.data || [])).catch(console.error);
-  }, []);
+  // Fetch customers with React Query
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customers"],
+    queryFn: async () => {
+      const res = await API.get("/customers");
+      return res.data || [];
+    },
+  });
 
   const fetchReport = async () => {
     if (!month || !year) return toast.error("Please select both month and year");
@@ -36,6 +44,7 @@ export default function Reports() {
         return (d.getMonth() + 1).toString() === month && d.getFullYear().toString() === year;
       });
       setCustomerBills(filtered);
+      setCurrentPage(1);
       toast.success("Report generated successfully");
     } catch (err) {
       console.error(err);
@@ -55,7 +64,7 @@ export default function Reports() {
     const reportEntries = customerBills.map((b, index) => ({
       sno: index + 1,
       invoiceNumber: b.invoiceNumber || `INV-${b._id.slice(-6).toUpperCase()}`,
-      date: new Date(b.date).toLocaleDateString(),
+      date: formatDate(b.date),
       amount: b.totalAmount || 0
     }));
     const grandTotal = reportEntries.reduce((sum, e) => sum + e.amount, 0);
@@ -347,10 +356,10 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {customerBills.map(b => (
+                    {(customerBills.slice((currentPage - 1) * pageSize, currentPage * pageSize)).map(b => (
                       <tr key={b._id}>
                         <td><span style={{ fontWeight: 600 }}>{b.invoiceNumber || `#${b._id.slice(-6).toUpperCase()}`}</span></td>
-                        <td>{new Date(b.date).toLocaleDateString()}</td>
+                        <td>{formatDate(b.date)}</td>
                         <td>{b.items?.map(i => `${i.name} (x${i.quantity})`).join(', ') || 'No items'}</td>
                         <td style={{ textAlign: 'right', fontWeight: 500 }}>₹{(b.totalAmount || 0).toLocaleString()}</td>
                       </tr>
@@ -366,6 +375,20 @@ export default function Reports() {
                   </tfoot>
                 </table>
               </div>
+
+              {/* Pagination for Report Bills */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(customerBills.length / pageSize) || 1}
+                totalItems={customerBills.length}
+                pageSize={pageSize}
+                onPageChange={(p) => setCurrentPage(p)}
+                onPageSizeChange={(sz) => {
+                  setPageSize(sz);
+                  setCurrentPage(1);
+                }}
+              />
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button className="btn-primary" onClick={handleDownload} style={{ background: '#0f172a' }}>
                   📥 Download Report

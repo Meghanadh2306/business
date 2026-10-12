@@ -1,10 +1,13 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import toast from "react-hot-toast";
 import html2pdf from "html2pdf.js";
 import html2canvas from "html2canvas";
 import { useAuth } from "../../context/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { formatDate } from "../../utils/dateUtils";
+import Pagination from "../../components/ui/Pagination";
 
 export default function CustomerDetails() {
   const { username } = useAuth();
@@ -14,31 +17,34 @@ export default function CustomerDetails() {
   const parlorTitle2 = isVijaya ? "DAIRY PARLOUR" : "SAI TIRUMALA DAIRY PARLOR";
   const { id } = useParams();
   const navigate = useNavigate();
-  const [bills, setBills] = useState([]);
-  const [customer, setCustomer] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [searchDate, setSearchDate] = useState("");
   const [selectedBillIds, setSelectedBillIds] = useState([]);
   const [sharing, setSharing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const isSharingRef = useRef(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [billsRes, customerRes] = await Promise.all([
-          API.get(`/bills/customer/${id}`).catch(() => ({ data: [] })),
-          API.get(`/customers/${id}`).catch(() => ({ data: null }))
-        ]);
-        setBills(billsRes.data || []);
-        setCustomer(customerRes.data || { name: 'Customer', phone: '' });
-      } catch (err) {
-        console.error("Error fetching details", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
+  // React Query: Customer details
+  const { data: customer = { name: 'Customer', phone: '' }, isLoading: custLoading } = useQuery({
+    queryKey: ['customer', id],
+    queryFn: async () => {
+      const res = await API.get(`/customers/${id}`);
+      return res.data || { name: 'Customer', phone: '' };
+    },
+  });
+
+  // React Query: Bills for this customer
+  const { data: bills = [], isLoading: billsLoading } = useQuery({
+    queryKey: ['customer-bills', id],
+    queryFn: async () => {
+      const res = await API.get(`/bills/customer/${id}`);
+      return res.data || [];
+    },
+  });
+
+  const loading = custLoading || billsLoading;
 
   const filteredBills = bills.filter(b => {
     if (!searchDate) return true;
@@ -47,6 +53,11 @@ export default function CustomerDetails() {
   });
 
   const total = filteredBills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+
+  const totalItems = filteredBills.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const validPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const paginatedBills = filteredBills.slice((validPage - 1) * pageSize, validPage * pageSize);
 
   // Multi-select helpers
   const isAllSelected = filteredBills.length > 0 && selectedBillIds.length === filteredBills.length;
@@ -85,36 +96,55 @@ export default function CustomerDetails() {
     setIsEditingCustomer(true);
   };
 
-  const handleUpdateCustomer = async (e) => {
-    e.preventDefault();
-    if (!custName) return toast.error("Customer name is required");
-
-    try {
-      const res = await API.put(`/customers/${id}`, {
-        name: custName,
-        phone: custPhone,
-        address: custAddress
-      });
-      setCustomer(res.data);
+  // Update customer mutation
+  const updateCustomerMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await API.put(`/customers/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['customer', id], updated);
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setIsEditingCustomer(false);
       toast.success("Customer details updated successfully");
-    } catch (err) {
+    },
+    onError: (err) => {
       console.error(err);
       toast.error("Failed to update customer");
     }
+  });
+
+  const handleUpdateCustomer = (e) => {
+    e.preventDefault();
+    if (!custName) return toast.error("Customer name is required");
+    updateCustomerMutation.mutate({
+      name: custName,
+      phone: custPhone,
+      address: custAddress
+    });
   };
 
-  const handleDelete = async (billId) => {
+  // Delete bill mutation
+  const deleteBillMutation = useMutation({
+    mutationFn: async (billId) => {
+      await API.delete(`/bills/${billId}`);
+      return billId;
+    },
+    onSuccess: (deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['customer-bills', id] });
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+      setSelectedBillIds(prev => prev.filter(bId => bId !== deletedId));
+      toast.success("Bill deleted successfully");
+    },
+    onError: (err) => {
+      console.error("Error deleting bill:", err);
+      toast.error("Failed to delete bill");
+    }
+  });
+
+  const handleDelete = (billId) => {
     if (window.confirm("Are you sure you want to delete this invoice?")) {
-      try {
-        await API.delete(`/bills/${billId}`);
-        setBills(bills.filter(b => b._id !== billId));
-        setSelectedBillIds(prev => prev.filter(id => id !== billId));
-        toast.success("Bill deleted successfully");
-      } catch (err) {
-        console.error("Error deleting bill:", err);
-        toast.error("Failed to delete bill");
-      }
+      deleteBillMutation.mutate(billId);
     }
   };
 
@@ -135,7 +165,7 @@ export default function CustomerDetails() {
           <div style="display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 15px; margin-bottom: 6px;">
             <span>No. ${bill.invoiceNumber ? bill.invoiceNumber.replace('INV-', '') : (bill._id ? bill._id.slice(-6).toUpperCase() : '')}</span>
             <span style="text-decoration: underline; font-style: italic;">Cash Bill</span>
-            <span>Date: ${bill.date ? new Date(bill.date).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+            <span>Date: ${formatDate(bill.date || new Date())}</span>
           </div>
           
           <!-- Parlor Info -->
@@ -508,7 +538,7 @@ export default function CustomerDetails() {
           <div class="header-top">
             <span>No. ${bill.invoiceNumber ? bill.invoiceNumber.replace('INV-', '') : ''}</span>
             <span class="cash-bill">Cash Bill</span>
-            <span>Date: ${new Date(bill.date).toLocaleDateString()}</span>
+            <span>Date: ${formatDate(bill.date || new Date())}</span>
           </div>
           
           <div class="header-center">
@@ -619,7 +649,10 @@ export default function CustomerDetails() {
           <input
             type="date"
             value={searchDate}
-            onChange={e => setSearchDate(e.target.value)}
+            onChange={e => {
+              setSearchDate(e.target.value);
+              setCurrentPage(1);
+            }}
             style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}
           />
         </div>
@@ -831,7 +864,8 @@ export default function CustomerDetails() {
         ) : bills.length === 0 ? (
           <p className="text-muted text-center py-4">No order history available for this customer.</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div>
+            <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -855,7 +889,7 @@ export default function CustomerDetails() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBills.map(b => {
+                {paginatedBills.map(b => {
                   const isSelected = selectedBillIds.includes(b._id);
                   return (
                     <tr
@@ -890,7 +924,7 @@ export default function CustomerDetails() {
                           )}
                         </span>
                       </td>
-                      <td>{new Date(b.date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                      <td>{formatDate(b.date)}</td>
                       <td>{b.items?.map(i => `${i.name} (x${i.quantity})`).join(', ') || 'No items'}</td>
                       <td style={{ fontWeight: 600, color: 'var(--text-main)' }}>₹{(b.totalAmount || 0).toLocaleString()}</td>
                       <td>
@@ -970,6 +1004,20 @@ export default function CustomerDetails() {
                 })}
               </tbody>
             </table>
+            </div>
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={validPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(sz) => {
+                setPageSize(sz);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )}
       </div>
