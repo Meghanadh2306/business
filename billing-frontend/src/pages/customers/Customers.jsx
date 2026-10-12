@@ -28,7 +28,7 @@ export default function Customers() {
 
   const addCustomer = async (e) => {
     e.preventDefault();
-    if (!name || !phone) return toast.error("Name and phone are required");
+    if (!name) return toast.error("Name is required");
 
     try {
       await API.post("/customers", { name, phone, address });
@@ -79,13 +79,13 @@ export default function Customers() {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Phone Number *</label>
+              <label style={{ display: 'block', fontSize: '12px', marginBottom: '4px', fontWeight: 600 }}>Phone Number</label>
               <input 
                 placeholder="+91 98765 43210" 
                 value={phone} 
                 onChange={(e) => setPhone(e.target.value)} 
                 style={{ width: '100%' }}
-                required
+
               />
             </div>
             <div>
